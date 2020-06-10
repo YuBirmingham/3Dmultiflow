@@ -290,10 +290,11 @@
         if(sdsd.ne.0.0) then
            denom=(ss**2.5+sdsd**1.25)
            if (denom.eq.0.0) then
-			!print*,'error, denominator is zero!'
-           		dom(ib)%vis(i,j,k) = rrey
-	     endif
-           dom(ib)%vis(i,j,k) = rrey + l_s * sdsd**1.5 / denom
+		!print*,'error, denominator is zero!'
+           	dom(ib)%vis(i,j,k) = rrey
+	   else
+           	dom(ib)%vis(i,j,k) = rrey + l_s * sdsd**1.5 / denom
+	   endif
         else
            dom(ib)%vis(i,j,k) = rrey 
         end if
