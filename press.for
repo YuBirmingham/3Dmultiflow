@@ -1,6 +1,9 @@
 !##########################################################################
         subroutine calmas
 !##########################################################################
+!
+! Calculate divergence free condition
+!
         use vars
         use mpi
         use multidata
@@ -8,13 +11,10 @@
         integer i,j,k,ib
         double precision fact,fact1,buffer_rmax
 
-        rmax=0.0
-
+        rmax=0.d0
         if(differencing.eq.2) then
         do ib=1,nbp
-           fact=0.0
-           fact1=0.0
-
+           fact=0.d0 ; fact1=0.d0
            do  k=dom(ib)%ksp,dom(ib)%kep
               do  i=dom(ib)%isp,dom(ib)%iep
                  do j=dom(ib)%jsp,dom(ib)%jep
@@ -34,11 +34,11 @@
               end do
            end do
         end do
-        else
-        do ib=1,nbp
-           fact=0.0
-           fact1=0.0
 
+        else !2nd CDS or WENO:
+
+        do ib=1,nbp
+           fact=0.d0 ;  fact1=0.d0
            do  k=dom(ib)%ksp,dom(ib)%kep
               do  i=dom(ib)%isp,dom(ib)%iep
                  do j=dom(ib)%jsp,dom(ib)%jep
@@ -51,8 +51,7 @@
  			  if (L_LSM) then
                        dom(ib)%sup(i,j,k)=
      & fact*dom(ib)%dx*dom(ib)%dy*dom(ib)%dz/dt
-!                       dom(ib)%sup(i-pl+1,j-pl+1,k-pl+1)=
-!     & fact*dom(ib)%dx*dom(ib)%dy*dom(ib)%dz/dt
+
 			  else
                        dom(ib)%su(i,j,k)=fact/dt
 			  end if
@@ -73,6 +72,74 @@
      &MPI_COMM_WORLD,ierr)
 
         end subroutine calmas
+!##########################################################################
+        subroutine calvel
+!##########################################################################
+!
+!Correct velocity field with pressure gradient
+!
+        use vars
+        use mpi
+        use multidata
+        implicit none
+        integer i,j,k,ib
+
+        do ib=1,nbp
+
+           do k=dom(ib)%ksu,dom(ib)%keu
+              do i=dom(ib)%isu,dom(ib)%ieu
+                 do j=dom(ib)%jsu,dom(ib)%jeu
+                   if (L_LSM) then
+                     dom(ib)%u(i,j,k)=(dom(ib)%ustar(i,j,k)-dt*alfapr*
+     &(dom(ib)%p(i+1,j,k)-dom(ib)%p(i,j,k))/dom(ib)%dx/
+     &(0.5*(dom(ib)%dens(i,j,k)+dom(ib)%dens(i+1,j,k))))
+		       else
+                     dom(ib)%u(i,j,k)=(dom(ib)%ustar(i,j,k)-dt*alfapr*
+     & (dom(ib)%p(i+1,j,k)-dom(ib)%p(i,j,k))/dom(ib)%dx)
+		       end if
+                 end do
+              end do
+           end do
+
+           do k=dom(ib)%ksv,dom(ib)%kev
+              do i=dom(ib)%isv,dom(ib)%iev
+                 do j=dom(ib)%jsv,dom(ib)%jev
+                   if (L_LSM) then
+                     dom(ib)%v(i,j,k)=(dom(ib)%vstar(i,j,k)-dt*alfapr*
+     & (dom(ib)%p(i,j+1,k)-dom(ib)%p(i,j,k))/dom(ib)%dy/
+     & (0.5*(dom(ib)%dens(i,j,k)+dom(ib)%dens(i,j+1,k))))
+
+			 else
+                     dom(ib)%v(i,j,k)=(dom(ib)%vstar(i,j,k)-dt*alfapr*
+     & (dom(ib)%p(i,j+1,k)-dom(ib)%p(i,j,k))/dom(ib)%dy)
+			 end if
+                 end do
+              end do
+           end do
+
+           do k=dom(ib)%ksw,dom(ib)%kew
+              do i=dom(ib)%isw,dom(ib)%iew
+                 do j=dom(ib)%jsw,dom(ib)%jew
+                   if (L_LSM) then
+                     dom(ib)%w(i,j,k)=(dom(ib)%wstar(i,j,k)-dt*alfapr*
+     & (dom(ib)%p(i,j,k+1)-dom(ib)%p(i,j,k))/dom(ib)%dz/
+     & (0.5*(dom(ib)%dens(i,j,k)+dom(ib)%dens(i,j,k+1))))
+
+			 else
+                     dom(ib)%w(i,j,k)=(dom(ib)%wstar(i,j,k)-dt*alfapr*
+     & (dom(ib)%p(i,j,k+1)-dom(ib)%p(i,j,k))/dom(ib)%dz)
+			 end if
+                 end do
+             end do
+           end do
+
+        end do
+
+        call exchange(1)
+        call exchange(2)
+        call exchange(3)
+
+        end subroutine calvel
 !##########################################################################
         subroutine pbound
 !##########################################################################
@@ -136,69 +203,6 @@
 
         end subroutine pbound
 !##########################################################################
-        subroutine calvel
-!##########################################################################
-        use vars
-        use mpi
-        use multidata
-        implicit none
-        integer i,j,k,ib
-
-        do ib=1,nbp
-
-           do k=dom(ib)%ksu,dom(ib)%keu
-              do i=dom(ib)%isu,dom(ib)%ieu
-                 do j=dom(ib)%jsu,dom(ib)%jeu
-                   if (L_LSM) then
-                     dom(ib)%u(i,j,k)=(dom(ib)%ustar(i,j,k)-dt*alfapr*
-     &(dom(ib)%p(i+1,j,k)-dom(ib)%p(i,j,k))/dom(ib)%dx/
-     &(0.5*(dom(ib)%dens(i,j,k)+dom(ib)%dens(i+1,j,k))))
-		       else
-                     dom(ib)%u(i,j,k)=(dom(ib)%ustar(i,j,k)-dt*alfapr*
-     & (dom(ib)%p(i+1,j,k)-dom(ib)%p(i,j,k))/dom(ib)%dx)
-		       end if
-                 end do
-              end do
-           end do
-
-           do k=dom(ib)%ksv,dom(ib)%kev
-              do i=dom(ib)%isv,dom(ib)%iev
-                 do j=dom(ib)%jsv,dom(ib)%jev
-                   if (L_LSM) then
-                     dom(ib)%v(i,j,k)=(dom(ib)%vstar(i,j,k)-dt*alfapr*
-     & (dom(ib)%p(i,j+1,k)-dom(ib)%p(i,j,k))/dom(ib)%dy/
-     & (0.5*(dom(ib)%dens(i,j,k)+dom(ib)%dens(i,j+1,k))))
-			 else
-                     dom(ib)%v(i,j,k)=(dom(ib)%vstar(i,j,k)-dt*alfapr*
-     & (dom(ib)%p(i,j+1,k)-dom(ib)%p(i,j,k))/dom(ib)%dy)
-			 end if
-                 end do
-              end do
-           end do
-
-           do k=dom(ib)%ksw,dom(ib)%kew
-              do i=dom(ib)%isw,dom(ib)%iew
-                 do j=dom(ib)%jsw,dom(ib)%jew
-                   if (L_LSM) then
-                     dom(ib)%w(i,j,k)=(dom(ib)%wstar(i,j,k)-dt*alfapr*
-     & (dom(ib)%p(i,j,k+1)-dom(ib)%p(i,j,k))/dom(ib)%dz/
-     & (0.5*(dom(ib)%dens(i,j,k)+dom(ib)%dens(i,j,k+1))))
-			 else
-                     dom(ib)%w(i,j,k)=(dom(ib)%wstar(i,j,k)-dt*alfapr*
-     & (dom(ib)%p(i,j,k+1)-dom(ib)%p(i,j,k))/dom(ib)%dz)
-			 end if
-                 end do
-             end do
-           end do
-
-        end do
-
-        call exchange(1)
-        call exchange(2)
-        call exchange(3)
-
-        end subroutine calvel
-!##########################################################################
         subroutine pressure_forcing
 !##########################################################################
         use vars
@@ -214,7 +218,6 @@
         flwsum_loc = 0.0
         A_loc      = 0.0
 
-
         do ib=1,nbp
 !           ispr=pl+1; iepr=dom(ib)%ttc_i-pl
            jspr=pl+1; jepr=dom(ib)%ttc_j-pl
@@ -225,7 +228,7 @@
                  do k=kspr,kepr
                    isp=dom(ib)%isu-1
 			 if (L_LSM) then
-			   if (dom(ib)%phi(isp,j,k) .ge. 0.0) then
+			   if (dom(ib)%phi(isp,j,k) .ge. 0.d0) then
                          flwsum_loc=flwsum_loc+
      & dom(ib)%u(isp,j,k)*dom(ib)%dy*dom(ib)%dz*
      & (dom(ib)%dens(isp,j,k)/densl)
@@ -261,8 +264,9 @@
 ! --- Calculate and store forcing term --------------------------------
         qstpp = flwsum/A
         fakfor = 0.3
-
-        forcn=forcn+fakfor*(qzero+qstpn-2.0*qstpp )/dt
+! Whatever the flow is lost, is added back again
+! 	  Q(t)=Q(t-1)+0.3?  *(U(0) +U(t-1)-2*U(t))/dt
+        forcn=forcn+fakfor*(qzero+qstpn-2.0*qstpp)/dt
         qstpn = qstpp
 
 
@@ -321,11 +325,9 @@
                     if (dom(ib)%knext.lt.0 .and. dom(ib)%bc_top.ne.5)
      &  dom(ib)%at(i,j,kep)=0.0
 
-
                     dom(ib)%ap(i,j,k) = -1.0*(dom(ib)%aw(i,j,k)+
      &  dom(ib)%ae(i,j,k)+dom(ib)%as(i,j,k)+dom(ib)%an(i,j,k)+
      &  dom(ib)%ab(i,j,k)+dom(ib)%at(i,j,k))
-
                  end do
               end do
            end do
@@ -345,8 +347,8 @@
 
         nsweeps = nsweeps + nsweep
 
-        buffer_ppref=0.0
-!        do ib=1,nbp
+        buffer_ppref=0.d0
+ !       do ib=1,nbp
 !           if(dom_id(ib).eq.prefdom) then
 !              buffer_ppref=dom(ib)%p(ipref,jpref,kpref)+
 !     &dom(ib)%pp(ipref,jpref,kpref)
@@ -377,17 +379,10 @@
 
  3000   continue
 
-        if(rmax.gt.100.0) then
+        if(rmax.gt.10.d0) then
            if(myrank.eq.0) write(numfile,*),'BIG RMAX!! STOP!!!!!',rmax
            write(6,*),'BIG RMAX!! STOP!!!!!!!!',rmax
 
-           !call tecgrid(itime)
-           !call tecplot_p(itime)
-           !call tecplot_u(itime)
-           !call tecplot_v(itime)
-           !call tecplot_w(itime)
-           !call tecbin(itime)
-	     if (L_LSM) call tecplot_phi(itime)
            if(myrank.eq.0) then
               open (unit=101, file='final_ctime.dat')
               write (101,'(i8,3F15.6)') 
@@ -399,7 +394,6 @@
            stop
         end if
 
-!        call plotres
         call boundu
         call boundv
         call boundw

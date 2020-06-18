@@ -10,17 +10,18 @@
         open (unit=12, file='control.cin')
 !------DOMAIN SIZE AND DISCRETIZATION -------------------------------------    
 	  read (12,*) 
+	  read (12,*) 
         read (12,*) keyword,ubulk
         read (12,*) g_dx,g_dy,g_dz
-        read (12,*) dens,Re,Pr,Sc_t,beta
-        read (12,*) gx,gy,gz
+        read (12,*) Re,Pr,Sc_t,beta
         read (12,*) conv_sch
         read (12,*) diff_sch
         read (12,*) differencing
         read (12,*) solver
         read (12,*) ngrid_input,mg_itrsch
         read (12,*) maxcy,irestr,iproln
-        read (12,*) dt,L_dt,sweeps,safety_factor
+        read (12,*) variTS,dt
+        read (12,*) sweeps,safety_factor
         read (12,*) itime_end,LRESTART,reinitmean,n_out
         read (12,*) niter,eps,nswp(1),nswp(2),nswp(3),nswp(4)
 	  read (12,*) 
@@ -33,20 +34,19 @@
 	  read (12,*) L_n,fric
         read (12,*) save_inflow,ITMAX_PI
 	  read (12,*) 
-        read (12,*) UPROF_SEM			!Pablo 15/12/2015
+        read (12,*) UPROF_SEM			
         read (12,*) TI_SEM 
         read (12,*) ITMAX_SEM
 	  read (12,*) 
-        read (12,*) pressureforce
         read (12,*) time_averaging,t_start_averaging1,
      & t_start_averaging2,noise
         read (12,*) SGS,sgs_model
         read (12,*) LMR
-        read (12,*) LIMB,LENERGY,LROUGH
-        read (12,*) LPT,OMP_threads,LSCALAR
         read (12,*) pl_ex	
-        read (12,*) Th,Tc
+        read (12,*) LIMB,LROUGH,LSCALAR
+        read (12,*) LPT,OMP_threads
 	  read (12,*) 
+        read (12,*) LENERGY,Th,Tc
         read (12,*) Tbc_w
         read (12,*) Tbc_e
         read (12,*) Tbc_s
@@ -54,14 +54,20 @@
         read (12,*) Tbc_b
         read (12,*) Tbc_t
         read (12,*)
-        read (12,*) L_LSM,reinit,ntime_reinit,reldif_LSM,length,accuracy
-     & ,cfl_lsm
+        read (12,*) length,L_LSM,reinit
+        read (12,*) ntime_reinit,reldif_LSM,cfl_lsm
 	  read (12,*) LENDS
-	  read (12,*) L_LSMbase,L_LSMinit
+	  read (12,*) L_LSMbase
 	  read (12,*) L_anim_phi,L_anim_grd 
 	  read (12,*) densl,densg,nul,nug
         read (12,*) grx,gry,grz
 	  read (12,*) slope
+	  read (12,*) 
+        read (12,*) LTURB
+        read (12,*) LINST	 
+        read (12,*) LPLAN	 
+        read (12,*) LTECP	                 	 
+        read (12,*) LTECBIN	
 	  read (12,*) 
 	  read (12,*) n_unstpt
 	  	allocate(id_unst(n_unstpt),i_unst(n_unstpt)
@@ -70,18 +76,22 @@
 			read (12,*)id_unst(i),i_unst(i),j_unst(i),k_unst(i)
 		enddo
 
+	 if (dom(ib)%bc_west.eq.7) read_inflow=.true.
+
         mul = nul * densl
         mug = nug * densg
 
 	if (trim(L_n).eq.'n') fric=fric**0.33
 
-!        if(bc_w.eq.5 .or. bc_e.eq.5 .or.
-!     & bc_s.eq.5 .or. bc_n.eq.5 .or.
-!     & bc_b.eq.5 .or. bc_t.eq.5) then
-!           PERIODIC=.true.
-!        else
-!           PERIODIC=.false.
-!        end if
+        if(bc_w.eq.5 .or. bc_e.eq.5 .or.
+     & bc_s.eq.5 .or. bc_n.eq.5 .or.
+     & bc_b.eq.5 .or. bc_t.eq.5) then
+           PERIODIC=.true. ; pressureforce=.true.
+        else
+           PERIODIC=.false. ; pressureforce=.false.
+        end if
+
+	 dtinit=dt
 
         do ib=1,nbp
            dom(ib)%bc_west=bc_w
@@ -97,14 +107,7 @@
            dom(ib)%Tbc_bottom=Tbc_b
            dom(ib)%Tbc_top=Tbc_t
            dom(ib)%ngrid=ngrid_input
-	     if (dom(ib)%bc_west.eq.7) read_inflow=.true.
         end do
-
-!        if(solver.eq.2 .and. LMR.eq.2) then
-!           print*,'error: wrong solver selection for LMR',
-!     &' new ghost cell approach!!, STOP'
-!           stop
-!        end if
 
         if(differencing.eq.3 .and. pl_ex.ne.2) then
            pl_ex=2
@@ -132,31 +135,9 @@
 	   stop
 	  endif
 
-	  if (L_LSMinit .and. (L_anim_phi .or. L_anim_grd)) then
-	   if (myrank.eq.0) then
-          print*,'Error: not possible to output animation files',
-     &'  for LSM_init run!'
-	   endif
-	   stop
-	  endif
-
-	  if (L_LSMbase .and. L_LSMinit) then
-	   if (myrank.eq.0) then
-          print*,'Error: L_LSMbase and L_LSMinit cannot both be true!'
-	   endif
-	   stop
-	  endif
-
 	  if (L_LSMbase .and. L_LSM) then
 	   if (myrank.eq.0) then
           print*,'Error: L_LSMbase and L_LSM cannot both be true!'
-	   endif
-	   stop
-	  endif
-
-	  if (L_LSMinit .and. L_LSM.eq..FALSE.) then
-	   if (myrank.eq.0) then
-          print*,'Error: L_LSMinit cannot be true if L_LSM is false!'
 	   endif
 	   stop
 	  endif
@@ -166,6 +147,13 @@
           print*,'Error: L_anim_phi cannot be true if L_LSM is false!'
 	   endif
 	   stop
+	  endif
+
+	  if (L_LSM .and. bc_w.ne.1 .or. L_LSMbase .and. bc_w.ne.1) then
+	   if (myrank.eq.0) then
+          print*,'Warning: LSM might not work well with this inlet BC!'
+	   endif
+!	   stop
 	  endif
 
         end 
@@ -231,7 +219,7 @@
     	     dom(ib)%facm1=1
     	     dom(ib)%facm2=1
 
-           allocate (dom(ib)%vis(tti,ttj,ttk))
+           allocate(dom(ib)%vis(tti,ttj,ttk),dom(ib)%vism(tti,ttj,ttk))
            allocate(dom(ib)%ksgs(tti,ttj,ttk))
            allocate(dom(ib)%ksgso(tti,ttj,ttk))
            allocate(dom(ib)%eps(tti,ttj,ttk))
@@ -239,20 +227,18 @@
            allocate (dom(ib)%stfcinf(6,pl,ngg))
            allocate(dom(ib)%T(tti,ttj,ttk),dom(ib)%To(tti,ttj,ttk))
            allocate(dom(ib)%Tm(tti,ttj,ttk),dom(ib)%Ttm(tti,ttj,ttk))
-
-           	allocate(dom(ib)%S(tti,ttj,ttk),dom(ib)%Sm(tti,ttj,ttk))
+           allocate(dom(ib)%S(tti,ttj,ttk),dom(ib)%Sm(tti,ttj,ttk))
 	     if (LSCALAR) then
            	allocate(dom(ib)%So(tti,ttj,ttk),dom(ib)%Stm(tti,ttj,ttk))
 	   	allocate(dom(ib)%sfactor(tti,ttj,ttk))
+	   	allocate(dom(ib)%ibfactor(tti,ttj,ttk))
 	     endif
 
-           if (L_LSM)! .or. L_LSMbase) 
-     & allocate(dom(ib)%dens(tti,ttj,ttk),
-     & dom(ib)%mu(tti,ttj,ttk),dom(ib)%ijkp_lsm(0:dom(ib)%ngrid))
-
-           if (LENERGY)! .or. L_LSMbase) 
-     & allocate(dom(ib)%dens(tti,ttj,ttk),
-     & dom(ib)%mu(tti,ttj,ttk),dom(ib)%ijkp_lsm(0:dom(ib)%ngrid))
+           if (L_LSM .or. L_LSMbase)  then
+            allocate(dom(ib)%dens(tti,ttj,ttk),
+     &      dom(ib)%mu(tti,ttj,ttk),dom(ib)%ijkp_lsm(0:dom(ib)%ngrid))
+	      allocate(dom(ib)%phi(tti,ttj,ttk),dom(ib)%phim(tti,ttj,ttk))
+	    endif
         
            if (L_LSM) then! .or. L_LSMbase) then
              dom(ib)%ijkp_lsm = 0
@@ -277,18 +263,30 @@
      & dom(ib)%dphi_dzplus(tti,ttj,ttk),
      & dom(ib)%dphi_dzminus(tti,ttj,ttk))
 
-              allocate (dom(ib)%tauwe(ttj,ttk))
-              allocate (dom(ib)%tauww(ttj,ttk))
-              allocate (dom(ib)%tauwn(tti,ttk))
-              allocate (dom(ib)%tauws(tti,ttk))
-              allocate (dom(ib)%tauwt(tti,ttj))
-              allocate (dom(ib)%tauwb(tti,ttj))
-              allocate (dom(ib)%tauwe2(ttj,ttk))
-              allocate (dom(ib)%tauww2(ttj,ttk))
-              allocate (dom(ib)%tauwn2(tti,ttk))
-              allocate (dom(ib)%tauws2(tti,ttk))
-              allocate (dom(ib)%tauwt2(tti,ttj))
-              allocate (dom(ib)%tauwb2(tti,ttj))
+              allocate (dom(ib)%tauwe(
+     &dom(ib)%jsp-1:dom(ib)%jep+1,dom(ib)%ksp-1:dom(ib)%kep+1))
+              allocate (dom(ib)%tauww(
+     &dom(ib)%jsp-1:dom(ib)%jep+1,dom(ib)%ksp-1:dom(ib)%kep+1))
+              allocate (dom(ib)%tauwn(
+     &dom(ib)%isp-1:dom(ib)%iep+1,dom(ib)%ksp-1:dom(ib)%kep+1))
+              allocate (dom(ib)%tauws(
+     &dom(ib)%isp-1:dom(ib)%iep+1,dom(ib)%ksp-1:dom(ib)%kep+1))
+              allocate (dom(ib)%tauwt(
+     &dom(ib)%isp-1:dom(ib)%iep+1,dom(ib)%jsp-1:dom(ib)%jep+1))
+              allocate (dom(ib)%tauwb(
+     &dom(ib)%isp-1:dom(ib)%iep+1,dom(ib)%jsp-1:dom(ib)%jep+1))
+              allocate (dom(ib)%tauwe2(
+     &dom(ib)%jsp-1:dom(ib)%jep+1,dom(ib)%ksp-1:dom(ib)%kep+1))
+              allocate (dom(ib)%tauww2(
+     &dom(ib)%jsp-1:dom(ib)%jep+1,dom(ib)%ksp-1:dom(ib)%kep+1))
+              allocate (dom(ib)%tauwn2(
+     &dom(ib)%isp-1:dom(ib)%iep+1,dom(ib)%ksp-1:dom(ib)%kep+1))
+              allocate (dom(ib)%tauws2(
+     &dom(ib)%isp-1:dom(ib)%iep+1,dom(ib)%ksp-1:dom(ib)%kep+1))
+              allocate (dom(ib)%tauwt2(
+     &dom(ib)%isp-1:dom(ib)%iep+1,dom(ib)%jsp-1:dom(ib)%jep+1))
+              allocate (dom(ib)%tauwb2(
+     &dom(ib)%isp-1:dom(ib)%iep+1,dom(ib)%jsp-1:dom(ib)%jep+1))
 
            if(solver.eq.2) then
               allocate (dom(ib)%faz(ngrd_gl))
@@ -328,7 +326,6 @@
            allocate (dom(ib)%re5m(nge),dom(ib)%re5p(nge))
            allocate (dom(ib)%se6m(nge),dom(ib)%se6p(nge))
            allocate (dom(ib)%re6m(nge),dom(ib)%re6p(nge))
-
 
            dom(ib)%x(1)=dom(ib)%xsl +(-pl+1)*dom(ib)%dx
            dom(ib)%y(1)=dom(ib)%ysl +(-pl+1)*dom(ib)%dy
@@ -572,32 +569,29 @@
         buffer_fmout = fmout
         call MPI_ALLREDUCE(buffer_fmout,fmout,1,MPI_FLT,MPI_SUM,
      &MPI_COMM_WORLD,ierr)
-
+!Ratio of inflow and outflow
         fct=flomas/(fmout+1.E-30)
-
+!Mass deficit
         Mdef=flomas-fmout
-
+!Update outflow regarding the mass deficit at the inlet
         do ib=1,nbp
            if(dom(ib)%inext.lt.0) then
 		if (dom(ib)%bc_east.lt.61 .and. dom(ib)%bc_east.ne.4) then    
               do j=dom(ib)%jsu,dom(ib)%jeu 
                  do k=dom(ib)%ksu,dom(ib)%keu  
-                    dom(ib)%u(dom(ib)%ieu+1,j,k)=
-     & dom(ib)%u(dom(ib)%ieu+1,j,k)*fct
+           dom(ib)%u(dom(ib)%ieu+1,j,k)=dom(ib)%u(dom(ib)%ieu+1,j,k)*fct
                  end do
               end do
 
               do j=dom(ib)%jsv,dom(ib)%jev 
                  do k=dom(ib)%ksv,dom(ib)%kev  
-                    dom(ib)%v(dom(ib)%iev+1,j,k)=
-     & dom(ib)%v(dom(ib)%iev+1,j,k)*fct
+           dom(ib)%v(dom(ib)%iev+1,j,k)=dom(ib)%v(dom(ib)%iev+1,j,k)*fct
                  end do
               end do
 
               do j=dom(ib)%jsw,dom(ib)%jew 
                  do k=dom(ib)%ksw,dom(ib)%kew  
-                    dom(ib)%w(dom(ib)%iew+1,j,k)=
-     & dom(ib)%w(dom(ib)%iew+1,j,k)*fct
+           dom(ib)%w(dom(ib)%iew+1,j,k)=dom(ib)%w(dom(ib)%iew+1,j,k)*fct
                  end do
               end do
 		endif
@@ -607,22 +601,19 @@
 		if (dom(ib)%bc_north.lt.61 .and. dom(ib)%bc_north.ne.4) then    
               do i=dom(ib)%isu,dom(ib)%ieu 
                  do k=dom(ib)%ksu,dom(ib)%keu  
-                    dom(ib)%u(i,dom(ib)%jeu+1,k)=
-     & dom(ib)%u(i,dom(ib)%jeu+1,k)*fct
+           dom(ib)%u(i,dom(ib)%jeu+1,k)=dom(ib)%u(i,dom(ib)%jeu+1,k)*fct
                  end do
               end do
 
               do i=dom(ib)%isv,dom(ib)%iev 
                  do k=dom(ib)%ksv,dom(ib)%kev  
-                    dom(ib)%v(i,dom(ib)%jev+1,k)=
-     & dom(ib)%v(i,dom(ib)%jev+1,k)*fct
+           dom(ib)%v(i,dom(ib)%jev+1,k)=dom(ib)%v(i,dom(ib)%jev+1,k)*fct
                  end do
               end do
 
               do i=dom(ib)%isw,dom(ib)%iew 
                  do k=dom(ib)%ksw,dom(ib)%kew  
-                    dom(ib)%w(i,dom(ib)%jew+1,k)=
-     & dom(ib)%w(i,dom(ib)%jew+1,k)*fct
+           dom(ib)%w(i,dom(ib)%jew+1,k)=dom(ib)%w(i,dom(ib)%jew+1,k)*fct
                  end do
               end do
 		endif
@@ -632,22 +623,19 @@
 		if (dom(ib)%bc_top.lt.61 .and. dom(ib)%bc_top.ne.4) then    
               do i=dom(ib)%isu,dom(ib)%ieu 
                  do j=dom(ib)%jsu,dom(ib)%jeu  
-                    dom(ib)%u(i,j,dom(ib)%keu+1)=
-     & dom(ib)%u(i,j,dom(ib)%keu+1)*fct
+           dom(ib)%u(i,j,dom(ib)%keu+1)=dom(ib)%u(i,j,dom(ib)%keu+1)*fct
                  end do
               end do
 
               do i=dom(ib)%isv,dom(ib)%iev 
                  do j=dom(ib)%jsv,dom(ib)%jev  
-                    dom(ib)%v(i,j,dom(ib)%kev+1)=
-     & dom(ib)%v(i,j,dom(ib)%kev+1)*fct
+           dom(ib)%v(i,j,dom(ib)%kev+1)=dom(ib)%v(i,j,dom(ib)%kev+1)*fct
                  end do
               end do
 
               do i=dom(ib)%isw,dom(ib)%iew 
                  do j=dom(ib)%jsw,dom(ib)%jew  
-                    dom(ib)%w(i,j,dom(ib)%kew+1)=
-     & dom(ib)%w(i,j,dom(ib)%kew+1)*fct
+           dom(ib)%w(i,j,dom(ib)%kew+1)=dom(ib)%w(i,j,dom(ib)%kew+1)*fct
                  end do
               end do
 		endif
@@ -664,12 +652,11 @@
         use multidata
         implicit none
         integer :: i,j,k,ib,tti,ttj,ttk,pll
-        integer :: sn,sn2,jtime
-        integer :: inind,jnind,knind
-        double precision dum,ubw,ube,ubs,ubn,ubt,ubb,vb,wb,lz
-        double precision, dimension(25) :: dm
-        character*8   :: chb1
-        character*25  :: gf
+        integer :: sn,sn2,jtime,idfile,inind,jnind,knind
+        double precision dum,ubw,ube,ubs,ubn,ubt,ubb,vb,wb,lz,dummy
+        double precision, dimension(22) :: dm
+        character*8   :: chb1,numpt,x,y,z
+        character*25  :: gf,unst
         character*100 :: dummyline
 
         do ib=1,nbp
@@ -680,12 +667,12 @@
 
            if (LRESTART) then
 
-              qzero=ubulk !brunho2014
+              qzero=ubulk 
               open (unit=700, file='final_ctime.dat')
               read (700,'(i8,3F15.6)') ntime,ctime,forcn,qstpn
               close (700)
 
-              write(chb1,'(i8)') dom_id(ib)
+              write(chb1,'(i4)') dom_id(ib)
               sn=len(trim(adjustl(chb1)))
               chb1=repeat('0',(4-sn))//trim(adjustl(chb1))
 
@@ -706,166 +693,141 @@
               do k=1,ttk
                  do j=1,ttj
                     do i=1,tti
-
                        read (700) dm(1),dm(2),dm(3),dm(4),dm(5),dm(6),
      & dm(7),dm(8),dm(9),dm(10),dm(11),dm(12),dm(13),dm(14),dm(15),
-     & dm(16),dm(17),dm(18),dm(19),dm(20),dm(21),dm(22),dm(23),
-     & dm(24),dm(25)
-
-                       dom(ib)%p  (i,j,k)=dm(4)
-                       dom(ib)%pm (i,j,k)=dm(5)
-                       dom(ib)%ppm(i,j,k)=dm(6)
-                       dom(ib)%vis(i,j,k)=dm(7)
-!		  	     if (L_LSMbase) then
-!                		 dom(ib)%u  (i,j,k)=dm(8)*ubulk/uprev
-!                 		 dom(ib)%um (i,j,k)=dm(9)*ubulk/uprev
-!                		 dom(ib)%uum(i,j,k)=dm(10)*ubulk/uprev
-!                		 dom(ib)%v  (i,j,k)=dm(11)*ubulk/uprev
-!                		 dom(ib)%vm (i,j,k)=dm(12)*ubulk/uprev
-!                		 dom(ib)%vvm(i,j,k)=dm(13)*ubulk/uprev
-!                		 dom(ib)%w  (i,j,k)=dm(14)*ubulk/uprev
-!                		 dom(ib)%wm (i,j,k)=dm(15)*ubulk/uprev
-!                		 dom(ib)%wwm(i,j,k)=dm(16)*ubulk/uprev
-!                		 dom(ib)%uvm(i,j,k)=dm(17)*ubulk/uprev
-!                		 dom(ib)%uwm(i,j,k)=dm(18)*ubulk/uprev
-!                		 dom(ib)%vwm(i,j,k)=dm(19)*ubulk/uprev
-!		  	     else
-                		 dom(ib)%u  (i,j,k)=dm(8)
-                		 dom(ib)%um (i,j,k)=dm(9)
-                		 dom(ib)%uum(i,j,k)=dm(10)
-                		 dom(ib)%v  (i,j,k)=dm(11)
-                		 dom(ib)%vm (i,j,k)=dm(12)
-                		 dom(ib)%vvm(i,j,k)=dm(13)
-                		 dom(ib)%w  (i,j,k)=dm(14)
-                		 dom(ib)%wm (i,j,k)=dm(15)
-                		 dom(ib)%wwm(i,j,k)=dm(16)
-                		 dom(ib)%uvm(i,j,k)=dm(17)
-                		 dom(ib)%uwm(i,j,k)=dm(18)
-                		 dom(ib)%vwm(i,j,k)=dm(19)
-!		  	     endif
-                       dom(ib)%S(i,j,k)=dm(20)
-              	     dom(ib)%Sm(i,j,k) = dm(21)
-                       dom(ib)%ksgs(i,j,k)=dm(22)
-              	     dom(ib)%eps(i,j,k) = dm(23)
-                       dom(ib)%T(i,j,k)=dm(24)
-                       dom(ib)%Tm(i,j,k)=dm(25)
-                       !dom(ib)%Ttm(i,j,k)=dm(23)
-
+     & dm(16),dm(17),dm(18),dm(19),dm(20),dm(21),dm(22)
+                        dom(ib)%p  (i,j,k)=dm(4)
+                        dom(ib)%pm (i,j,k)=dm(5)
+                        dom(ib)%ppm(i,j,k)=dm(6)
+                        dom(ib)%vis(i,j,k)=dm(7)
+                        dom(ib)%vism(i,j,k)=dm(8)			!!
+                		dom(ib)%u  (i,j,k)=dm(9)
+                		dom(ib)%um (i,j,k)=dm(10)
+                		dom(ib)%uum(i,j,k)=dm(11)
+                		dom(ib)%v  (i,j,k)=dm(12)
+                		dom(ib)%vm (i,j,k)=dm(13)
+                		dom(ib)%vvm(i,j,k)=dm(14)
+                		dom(ib)%w  (i,j,k)=dm(15)
+                		dom(ib)%wm (i,j,k)=dm(16)
+                		dom(ib)%wwm(i,j,k)=dm(17)
+                		dom(ib)%uvm(i,j,k)=dm(18)
+                		dom(ib)%uwm(i,j,k)=dm(19)
+                		dom(ib)%vwm(i,j,k)=dm(20)
+                        dom(ib)%ksgs(i,j,k)=dm(21)
+              	      dom(ib)%eps(i,j,k) = dm(22)
                     end do
                  end do
               end do
               close (700)
+
+		IF (LENERGY.EQ..TRUE. )then
+              gf='tecplot_T'//trim(adjustl(chb1))//'.plt'
+              open (unit=700, file=gf,status='old')
+              read (700) 
+              read (700) 
+              read (700) 
+
+              do k=dom(ib)%ksp-1,dom(ib)%kep+1
+                 do j=dom(ib)%jsp-1,dom(ib)%jep+1
+                    do i=dom(ib)%isp-1,dom(ib)%iep+1
+              read (700) dummy,dummy,dummy,
+     &  dom(ib)%T(i,j,k),dom(ib)%Tm(i,j,k),dom(ib)%Ttm(i,j,k)
+                   end do
+                 end do
+              end do
+              close (700)
+		ENDIF
+		IF (LSCALAR.EQ..TRUE. )then
+              gf='tecplot_S'//trim(adjustl(chb1))//'.plt'
+              open (unit=700, file=gf,status='old')
+              read (700) 
+              read (700) 
+              read (700) 
+              do k=dom(ib)%ksp-1,dom(ib)%kep+1
+                 do j=dom(ib)%jsp-1,dom(ib)%jep+1
+                    do i=dom(ib)%isp-1,dom(ib)%iep+1
+              read (700) dummy,dummy,dummy,
+     &  dom(ib)%S(i,j,k),dom(ib)%Sm(i,j,k),dom(ib)%Stm(i,j,k),
+     &  dom(ib)%SUtm(i,j,k),dom(ib)%SVtm(i,j,k),dom(ib)%SWtm(i,j,k)
+                   end do
+                 end do
+              end do
+              close (700)
+		ENDIF
+
 !===============================================================
 
               if (reinitmean) then
-                 dom(ib)%um   = 0.0; dom(ib)%vm   = 0.0
-                 dom(ib)%wm   = 0.0; dom(ib)%pm   = 0.0
-                 dom(ib)%uum  = 0.0; dom(ib)%vvm  = 0.0
-                 dom(ib)%wwm  = 0.0; dom(ib)%uvm  = 0.0
-                 dom(ib)%uwm  = 0.0; dom(ib)%vwm  = 0.0
-                 dom(ib)%ppm  = 0.0
-                 dom(ib)%Tm   = 0.0; dom(ib)%Ttm  = 0.0
-                 ctime=0.0
+                 dom(ib)%um   = 0.d0; dom(ib)%vm   = 0.d0
+                 dom(ib)%wm   = 0.d0; dom(ib)%pm   = 0.d0
+                 dom(ib)%uum  = 0.d0; dom(ib)%vvm  = 0.d0
+                 dom(ib)%wwm  = 0.d0; dom(ib)%uvm  = 0.d0
+                 dom(ib)%uwm  = 0.d0; dom(ib)%vwm  = 0.d0
+                 dom(ib)%ppm  = 0.d0
+                 dom(ib)%Tm   = 0.d0; dom(ib)%Ttm  = 0.d0
+                 dom(ib)%vism = 0.d0
+ 		     dom(ib)%Sm   = 0.d0; dom(ib)%Stm=0.d0	
+                 dom(ib)%SUtm = 0.0 ; dom(ib)%SVtm  = 0.0
+                 dom(ib)%SWtm = 0.0 !; dom(ib)%S   = 0.0	   
+                 ctime=0.d0
                  ntime=0
-		     if (L_LSM) dom(ib)%phim  = 0.0
+		     if (L_LSM) dom(ib)%phim  = 0.d0
               end if
            else
 
               qzero=ubulk 								!brunho2014
               qstpn=qzero
               forcn=2.0/(Re*qzero)
-              ctime=0.0
+              ctime=0.D0
               ntime=0
 
-	        if (L_LSMbase) then
-                do k=2,ttk
+	        if (L_LSMbase .or. L_LSM) then
+                do k=1,ttk
                   do j=1,ttj
                     do i=1,tti
-			    if (dom(ib)%z(k-1).le.length) then
-	                  dom(ib)%u(i,j,k)=Ubulk  
-	                  dom(ib)%uo(i,j,k)=Ubulk 
-				dom(ib)%uoo(i,j,k)=Ubulk
+			    if (dom(ib)%zc(k).le.length) then
+                        dom(ib)%u(i,j,k)  =Ubulk  
+                        dom(ib)%uo(i,j,k) =Ubulk 
+			      dom(ib)%uoo(i,j,k)=Ubulk
 			    else
-				dom(ib)%u(i,j,k)=0.0
-                        dom(ib)%uo(i,j,k)=0.0
-			      dom(ib)%uoo(i,j,k)=0.0
-			    end if
-			  end do
-		      end do
-		    end do
-		  else if (L_LSM) then
-                do k=2,ttk
-                  do j=1,ttj
-                    do i=1,tti
-			    if (dom(ib)%phi(i,j,k).ge.0.0) then
-	                  dom(ib)%u(i,j,k)=Ubulk  
-	                  dom(ib)%uo(i,j,k)=Ubulk 
-				dom(ib)%uoo(i,j,k)=Ubulk
-			    else
-				dom(ib)%u(i,j,k)=0.0
-                        dom(ib)%uo(i,j,k)=0.0
-			      dom(ib)%uoo(i,j,k)=0.0
+				dom(ib)%u(i,j,k)=0.D0
+                        dom(ib)%uo(i,j,k)=0.D0 
+			      dom(ib)%uoo(i,j,k)=0.D0
 			    end if
 			  end do
 		      end do
 		    end do
 		  else
-		    dom(ib)%u=Ubulk
-                dom(ib)%uo=Ubulk 
-		    dom(ib)%uoo=Ubulk	
+		    dom(ib)%u=0.d0
+                dom(ib)%uo=0.d0 
+		    dom(ib)%uoo=0.d0	
 		  end if
 
 	   	  lz=zen-zst
-	        if (L_LSM) lz=length
-	        if (L_LSMbase) lz=length
 
-!======================STRATIFICATION CONDITIONS========================
-                do k=1,ttk
-                  do j=1,ttj
-                    do i=1,tti
-		if (dom(ib)%z(k).gt.0.66) then
-              dom(ib)%T(i,j,k)=5.;  dom(ib)%To(i,j,k)=5.
-		elseif (dom(ib)%z(k).le.0.66.and.dom(ib)%z(k).gt.0.33) then
-              dom(ib)%T(i,j,k)=0.;  dom(ib)%To(i,j,k)=0.
-		elseif (dom(ib)%z(k).le.0.33) then
-              dom(ib)%T(i,j,k)=-5.;  dom(ib)%To(i,j,k)=-5.
-		endif
-			  end do
-		      end do
-		    end do
-!=======================================================================
-
-              dom(ib)%v=0.0; dom(ib)%w=0.0
-              dom(ib)%p=0.0
-              dom(ib)%vo=0.0; dom(ib)%voo=0.0
-              dom(ib)%wo=0.0; dom(ib)%woo=0.0
-!              dom(ib)%T=0.0;  dom(ib)%To=0.0
-              dom(ib)%Tm=0.0; dom(ib)%Ttm=0.0
-              dom(ib)%S=0.0;  dom(ib)%So=0.0
-              dom(ib)%Sm=0.0; dom(ib)%Stm=0.0
-              dom(ib)%vis  = 1.0/Re
-              dom(ib)%um   = 0.0; dom(ib)%vm   = 0.0
-              dom(ib)%wm   = 0.0; dom(ib)%pm   = 0.0
-              dom(ib)%uum  = 0.0; dom(ib)%vvm  = 0.0
-              dom(ib)%wwm  = 0.0; dom(ib)%uvm  = 0.0
-              dom(ib)%uwm  = 0.0; dom(ib)%vwm  = 0.0
-              dom(ib)%ppm  = 0.0
-       	  dom(ib)%tauww  = 0.0; dom(ib)%tauww2  = 0.0
-              dom(ib)%tauwe  = 0.0; dom(ib)%tauwe2  = 0.0
-              dom(ib)%tauws  = 0.0; dom(ib)%tauws2  = 0.0
-              dom(ib)%tauwn  = 0.0; dom(ib)%tauwn2  = 0.0
-              dom(ib)%tauwb  = 0.0; dom(ib)%tauwb2  = 0.0
-              dom(ib)%tauwt  = 0.0; dom(ib)%tauwt2  = 0.0
-              !dom(ib)%ksgs = 0.0
-              !dom(ib)%eps  = 0.0
-              dom(ib)%ksgs = (3.d0/2.d0)*(ubulk*0.1)**2.0
-              dom(ib)%eps  = 0.09**0.75*dom(ib)%ksgs**1.5/(0.07*lz)	
+              dom(ib)%v=0.d0		; dom(ib)%w=0.d0
+              dom(ib)%p=0.d0		; dom(ib)%pm=0.d0
+              dom(ib)%vo=0.d0		; dom(ib)%voo=0.d0
+              dom(ib)%wo=0.d0		; dom(ib)%woo=0.d0
+              dom(ib)%T=0.d0		; dom(ib)%To=0.d0
+              dom(ib)%Tm=0.d0		; dom(ib)%Ttm=0.d0
+              dom(ib)%S=0.d0		; dom(ib)%So=0.d0
+              dom(ib)%Sm   =0.d0	; dom(ib)%Stm=0.d0
+              dom(ib)%SUtm =0.d0    ; dom(ib)%SVtm=0.d0 
+              dom(ib)%wm   = 0.d0	; dom(ib)%SWtm=0.d0
+              dom(ib)%um   = 0.d0	; dom(ib)%vm   = 0.d0
+              dom(ib)%uum  = 0.d0	; dom(ib)%vvm  = 0.d0
+              dom(ib)%wwm  = 0.d0	; dom(ib)%uvm  = 0.d0
+              dom(ib)%uwm  = 0.d0	; dom(ib)%vwm  = 0.d0
+              dom(ib)%ppm  = 0.d0
+              dom(ib)%ksgs = (3.d0/2.d0)*(ubulk*0.1)**2.0		  ! 0.d0
+              dom(ib)%eps  = 0.09**0.75*dom(ib)%ksgs**1.5/(0.07*lz) ! 0.d0		 
 
               if (trim(keyword).eq.'channel') then
                 if (.not.L_LSM .and. .not.L_LSMbase) then
 		       dom(ib)%u=ubulk
 		    end if
-                   ubw=ubulk; ube=ubulk; ubs=ubulk				!brunho2014
+                   ubw=ubulk; ube=ubulk; ubs=ubulk				
 		       ubn=ubulk; ubt=ubulk; ubb=ubulk
                    vb=0.0; wb=0.0
               else if (trim(keyword).eq.'cavity') then
@@ -1045,9 +1007,9 @@
               end if
 
 
-!.######### U=> When power law inlet condition, 7 Dic 2015 .##########
-!          IF (dom(ib)%bc_west.eq.12 .or. UPROF_SEM.eq.12) THEN		
-          IF (dom(ib)%bc_west.eq.12) THEN				
+!.######### U=> When power law inlet conditions .##########
+          IF (dom(ib)%bc_west.eq.12 .or. 
+     &  (dom(ib)%bc_west.eq.8 .and. UPROF.eq.12)) THEN	
            do i = dom(ib)%isu-1,dom(ib)%ieu+1 
 		do j = dom(ib)%jsu-1,dom(ib)%jeu+1
 		 do k = dom(ib)%ksu-1,dom(ib)%keu+1
@@ -1062,8 +1024,8 @@
      &	 *(DABS(dom(ib)%zc(k)/(zen-zst)))**(1.d0/7.d0)
 	     enddo ; end do ;  end do
           END IF
-!.######### U=> When power law inlet condition, 7 Dic 2015 .##########
-          IF (dom(ib)%bc_west.eq.13) THEN			
+          IF (dom(ib)%bc_west.eq.13 .or. 
+     &  (dom(ib)%bc_west.eq.8 .and. UPROF.eq.13)) THEN		
            do i = dom(ib)%isu-1,dom(ib)%ieu+1 
 		do j = dom(ib)%jsu-1,dom(ib)%jeu+1
 		 do k = dom(ib)%ksu-1,dom(ib)%keu+1
@@ -1076,32 +1038,49 @@
 	  endif
 	     enddo ; end do ;  end do
           END IF
+          IF (dom(ib)%bc_west.eq.14 .or. 
+     &  (dom(ib)%bc_west.eq.8 .and. UPROF.eq.14)) THEN		
+           do i = dom(ib)%isu-1,dom(ib)%ieu+1 
+		do j = dom(ib)%jsu-1,dom(ib)%jeu+1
+		 do k = dom(ib)%ksu-1,dom(ib)%keu+1
+            dom(ib)%u(i,j,k) = ubulk*(1.d0+1.d0/7.d0)
+     &  *(DABS(dom(ib)%zc(k)/(zen-zst)))**(1.d0/7.d0)
+	     enddo ; end do ;  end do
+          END IF
+          IF (dom(ib)%bc_west.eq.15.or. 
+     &  (dom(ib)%bc_west.eq.8 .and. UPROF.eq.15)) THEN			
+           do i = dom(ib)%isu-1,dom(ib)%ieu+1 
+		do j = dom(ib)%jsu-1,dom(ib)%jeu+1
+		 do k = dom(ib)%ksu-1,dom(ib)%keu+1
+	            dom(ib)%u(i,j,k) = 0.0187d0*
+     &  (1.d0/0.41d0*DLOG(DABS(dom(ib)%zc(k))*0.0187d0*10**6)+5.d0)
+	     enddo ; end do ;  end do
+          END IF
 
-           end if	!No restart
-
-!	     Allocate time series 
-		
-	     jtime=itime_end-ntime
-
-	     if (ntime*dt.lt.t_start_averaging2) then
-			jtime=itime_end-INT(t_start_averaging2/dt)	
-	     endif
-
-	     allocate(dom(ib)%u_unst(n_unstpt,jtime))
-	     allocate(dom(ib)%v_unst(n_unstpt,jtime))
-	     allocate(dom(ib)%w_unst(n_unstpt,jtime))
-	     allocate(dom(ib)%um_unst(n_unstpt,jtime))
-	     allocate(dom(ib)%vm_unst(n_unstpt,jtime))
-	     allocate(dom(ib)%wm_unst(n_unstpt,jtime))
-	     allocate(dom(ib)%p_unst(n_unstpt,jtime))
-	     allocate(dom(ib)%pm_unst(n_unstpt,jtime))
-	     allocate(dom(ib)%ksgs_unst(n_unstpt,jtime))
-	     allocate(dom(ib)%eps_unst(n_unstpt,jtime))
-
-        end do
+       end if    !!!!!!!!!!!non-restart
 
 !.################################################
-!.###########  Synthetic Eddy Method, 14 Dic 2015    ##########
+!.###########   Allocate time series    ##########
+	 do i=1,n_unstpt
+	  if(dom_id(ib).eq.id_unst(i)) then
+		jtime=itime_end-ntime
+	     if (ntime*dt.lt.t_start_averaging1) then
+			jtime=itime_end-INT(t_start_averaging1/dt)	
+	     endif
+		write(numpt,'(i3)') i
+		unst='unst_'//trim(adjustl(numpt))//'.dat'
+		idfile=499+i
+		open (unit=idfile, file=unst)
+		write(x,'(F6.3)')dom(ib)%x(i_unst(i))
+		write(y,'(F6.3)')dom(ib)%y(j_unst(i))
+		write(z,'(F6.3)')dom(ib)%z(k_unst(i))
+		write(idfile,*)'ZoneT = "Time series:',x,y,z,'"'
+		write(idfile,*)'Variables = ctime,u,v,w'
+	  endif
+	 enddo
+      end do!ib
+!.################################################
+!.###########  Synthetic Eddy Method   ##########
           IF (bc_w.eq.8 .and. myrank.eq.0) then
 		print*,'Writing the SEM inlet'
 		call SEM  !Generate the files for the inlet turbulent field

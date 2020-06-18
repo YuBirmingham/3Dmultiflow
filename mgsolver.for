@@ -10,7 +10,7 @@
      & pre_nkpl
         integer glevel,gl,mgc_i,mgc_j,mgc_k,cnt,incr,ijk_lsm
         integer prmgci,prmgcj,prmgck
-        real :: dxx,dyy,dzz,ndx,ndy,ndz
+        double precision :: dxx,dyy,dzz,ndx,ndy,ndz
 
         do ib=1,nbp
 
@@ -76,8 +76,7 @@
 
              ijk_lsm=(k-2)*(mgc_i-2)*(mgc_j-2)+(i-2)*(mgc_j-2)+(j-1)
 
-             dom(ib)%dens_mg(ijk_lsm)=
-     &              dom(ib)%dens(i+pl-1,j+pl-1,k+pl-1) 
+       	 dom(ib)%dens_mg(ijk_lsm)=dom(ib)%dens(i+pl-1,j+pl-1,k+pl-1) 
              else if (glevel.ne.1)  then
              ijk_lsm=dom(ib)%ijkp_lsm(glevel-1)+
      &(k-2)*(mgc_i-2)*(mgc_j-2)+(i-2)*(mgc_j-2)+(j-1)

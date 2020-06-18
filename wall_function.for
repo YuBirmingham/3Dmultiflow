@@ -1,5 +1,5 @@
 !##########################################################################
-      subroutine wall_function(bound,ib)
+      subroutine wall_function(bound,cond)
 !			Bruño Fraga Bugallo
 !			Cardiff 2014
 !			werner/wengle type boundary conditions
@@ -15,21 +15,6 @@
 
         rrey=1.0/Re
         small = 1.e-30
-
-	  SELECT CASE (bound)
-	  	CASE (1) 
-			cond=dom(ib)%bc_west
-	  	CASE (2) 
-			cond=dom(ib)%bc_east
-	  	CASE (3) 
-			cond=dom(ib)%bc_south
-	  	CASE (4) 
-			cond=dom(ib)%bc_north
-	  	CASE (5) 
-			cond=dom(ib)%bc_bottom
-	  	CASE (6) 
-			cond=dom(ib)%bc_top
-	  end select
 
 	  SELECT CASE (cond)
 
@@ -57,17 +42,18 @@
       const3 = aaa ** (2. / (1. - bbb))
       const4 = 2. / (1. + bbb)
 
+        do ib=1,nbp
+
 	  SELECT CASE (bound)
 
 	  CASE (1) 
-              delta=dom(ib)%dx
+              delta=0.5*dom(ib)%dx
               n_x=1.0
               n_y=0.0
               n_z=0.0
               i=dom(ib)%isp
               do k=dom(ib)%ksp-1,dom(ib)%kep+1
                  do j=dom(ib)%jsp-1,dom(ib)%jep+1
-        if (L_LSM)  rrey=dom(ib)%mu(i,j,k)/dom(ib)%dens(i,j,k)
                     uc=0.5*(dom(ib)%u(i,j,k)+dom(ib)%u(i-1,j,k))
                     vc=0.5*(dom(ib)%v(i,j,k)+dom(ib)%v(i,j-1,k))
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
@@ -91,14 +77,13 @@
 
 
 	     CASE (2)
-              delta=dom(ib)%dx
+              delta=0.5*dom(ib)%dx
               n_x=-1.0
               n_y=0.0
               n_z=0.0
               i=dom(ib)%iep
               do k=dom(ib)%ksp-1,dom(ib)%kep+1
                  do j=dom(ib)%jsp-1,dom(ib)%jep+1
-        if (L_LSM)  rrey=dom(ib)%mu(i,j,k)/dom(ib)%dens(i,j,k)
                     uc=0.5*(dom(ib)%u(i,j,k)+dom(ib)%u(i-1,j,k))
                     vc=0.5*(dom(ib)%v(i,j,k)+dom(ib)%v(i,j-1,k))
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
@@ -121,7 +106,7 @@
               end do
 
            CASE(3)
-              delta=dom(ib)%dy
+              delta=0.5*dom(ib)%dy
               n_x=0.0
               n_y=1.0
               n_z=0.0
@@ -129,7 +114,6 @@
 
               do k=dom(ib)%ksp-1,dom(ib)%kep+1
                  do i=dom(ib)%isp-1,dom(ib)%iep+1
-        if (L_LSM)  rrey=dom(ib)%mu(i,j,k)/dom(ib)%dens(i,j,k)
                     uc=0.5*(dom(ib)%u(i,j,k)+dom(ib)%u(i-1,j,k))
                     vc=0.5*(dom(ib)%v(i,j,k)+dom(ib)%v(i,j-1,k))
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
@@ -153,14 +137,13 @@
 
 
            CASE (4)
-              delta=dom(ib)%dy
+              delta=0.5*dom(ib)%dy
               n_x=0.0
               n_y=-1.0
               n_z=0.0
               j=dom(ib)%jep
               do k=dom(ib)%ksp-1,dom(ib)%kep+1
                  do i=dom(ib)%isp-1,dom(ib)%iep+1
-        if (L_LSM)  rrey=dom(ib)%mu(i,j,k)/dom(ib)%dens(i,j,k)
                     uc=0.5*(dom(ib)%u(i,j,k)+dom(ib)%u(i-1,j,k))
                     vc=0.5*(dom(ib)%v(i,j,k)+dom(ib)%v(i,j-1,k))
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
@@ -184,14 +167,13 @@
 
            CASE (5)
 
-              delta=dom(ib)%dz
+              delta=0.5*dom(ib)%dz
               n_x=0.0
               n_y=0.0
               n_z=1.0
               k=dom(ib)%ksp
               do j=dom(ib)%jsp-1,dom(ib)%jep+1
                  do i=dom(ib)%isp-1,dom(ib)%iep+1
-        if (L_LSM)  rrey=dom(ib)%mu(i,j,k)/dom(ib)%dens(i,j,k)
                     uc=0.5*(dom(ib)%u(i,j,k)+dom(ib)%u(i-1,j,k))
                     vc=0.5*(dom(ib)%v(i,j,k)+dom(ib)%v(i,j-1,k))
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
@@ -215,14 +197,13 @@
 
 
            CASE (6)
-              delta=dom(ib)%dz
+              delta=0.5*dom(ib)%dz
               n_x=0.0
               n_y=0.0
               n_z=-1.0
               k=dom(ib)%kep
               do j=dom(ib)%jsp-1,dom(ib)%jep+1
                  do i=dom(ib)%isp-1,dom(ib)%iep+1
-        if (L_LSM)  rrey=dom(ib)%mu(i,j,k)/dom(ib)%dens(i,j,k)
                     uc=0.5*(dom(ib)%u(i,j,k)+dom(ib)%u(i-1,j,k))
                     vc=0.5*(dom(ib)%v(i,j,k)+dom(ib)%v(i,j-1,k))
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
@@ -245,6 +226,7 @@
               end do
 
 	  end select
+        end do
 
         return
         end subroutine wall_function

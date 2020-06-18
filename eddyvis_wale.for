@@ -33,19 +33,9 @@
         js=dom(ib)%jsp; je=dom(ib)%jep
         ks=dom(ib)%ksp; ke=dom(ib)%kep
 
-        do k=ks-1,ke+1
-           do j=js-1,je+1
-              do i=is-1,ie+1
-
-        if (L_LSM)  rrey=dom(ib)%mu(i,j,k)/dom(ib)%dens(i,j,k)
-
-	if (LENERGY) then
-		dom(ib)%dens(i,j,k) = 
-     &		999.8/(1.+0.000088*(dom(ib)%T(i,j,k)+20.))
-		dom(ib)%mu(i,j,k) = 
-     &		2.414d-5*10.d0**(-25.2/(dom(ib)%T(i,j,k)+20.-413.d0))
-			rrey=dom(ib)%mu(i,j,k)/dom(ib)%dens(i,j,k)
-	endif
+        do k=ks,ke
+           do j=js,je
+              do i=is,ie
 
 !====================================================
         vr_a = 0.25*( dom(ib)%u(i,j,k)   + dom(ib)%u(i-1,j,k) +
@@ -286,15 +276,15 @@
         sdsd = ( s11d*s11d +     s22d*s22d +     s33d*s33d  +
      &       2.0*s12d*s12d + 2.0*s13d*s13d + 2.0*s23d*s23d  )
 
+        if (L_LSM) rrey=dom(ib)%mu(i,j,k)/dom(ib)%dens(i,j,k)
 
         if(sdsd.ne.0.0) then
            denom=(ss**2.5+sdsd**1.25)
            if (denom.eq.0.0) then
-		!print*,'error, denominator is zero!'
-           	dom(ib)%vis(i,j,k) = rrey
-	   else
-           	dom(ib)%vis(i,j,k) = rrey + l_s * sdsd**1.5 / denom
-	   endif
+			!print*,'error, denominator is zero!'
+           		dom(ib)%vis(i,j,k) = rrey
+	     endif
+           dom(ib)%vis(i,j,k) = rrey + l_s * sdsd**1.5 / denom
         else
            dom(ib)%vis(i,j,k) = rrey 
         end if
@@ -334,6 +324,22 @@
                     dom(ib)%vis(is-1,j,k)= dom(ib)%vis(is,j,k)
                  end do
               end do
+           else if (dom(ib)%bc_west.ge.63) then
+	     call wall_function(1,dom(ib)%bc_west)
+              do k=ks-1,ke+1
+                 do j=js-1,je+1
+                    !dom(ib)%vis(is,j,k)= dom(ib)%tauww2(j,k)*dx		!m2/s
+                    dom(ib)%vis(is-1,j,k)= dom(ib)%vis(is,j,k)
+                 end do
+              end do
+           else if (dom(ib)%bc_west.eq.61.or.dom(ib)%bc_west.eq.62) then
+	     call log_law(1,dom(ib)%bc_west)
+              do k=ks-1,ke+1
+                 do j=js-1,je+1
+                    !dom(ib)%vis(is,j,k)= dom(ib)%tauww2(j,k)*dx		!m2/s
+                    dom(ib)%vis(is-1,j,k)= dom(ib)%vis(is,j,k)
+                 end do
+              end do
            else
               do k=ks-1,ke+1
                  do j=js-1,je+1
@@ -365,6 +371,22 @@
                     dom(ib)%vis(ie+1,j,k)= dom(ib)%vis(ie,j,k)
                  end do
               end do
+           else if (dom(ib)%bc_east.ge.63) then
+	     call wall_function(2,dom(ib)%bc_east)
+              do k=ks-1,ke+1
+                 do j=js-1,je+1
+                    !dom(ib)%vis(ie,j,k)= dom(ib)%tauwe2(j,k)*dx		!m2/s
+                    dom(ib)%vis(ie+1,j,k)= dom(ib)%vis(ie,j,k)
+                 end do
+              end do
+           else if (dom(ib)%bc_east.eq.61.or.dom(ib)%bc_east.eq.62) then
+	     call log_law(2,dom(ib)%bc_east)
+              do k=ks-1,ke+1
+                 do j=js-1,je+1
+                    !dom(ib)%vis(ie,j,k)= dom(ib)%tauwe2(j,k)*dx		!m2/s
+                    dom(ib)%vis(ie+1,j,k)= dom(ib)%vis(ie,j,k)
+                 end do
+              end do
            else
               do k=ks-1,ke+1
                  do j=js-1,je+1
@@ -387,6 +409,22 @@
               do k=ks-1,ke+1
                  do i=is-1,ie+1
                     dom(ib)%vis(i,js,k)= rrey
+                    dom(ib)%vis(i,js-1,k)= dom(ib)%vis(i,js,k)
+                 end do
+              end do
+           else if (dom(ib)%bc_south.ge.63) then
+	     call wall_function(3,dom(ib)%bc_south)
+              do k=ks-1,ke+1
+                 do i=is-1,ie+1
+                   ! dom(ib)%vis(i,js,k)= dom(ib)%tauws2(i,k)*dy		!m2/s
+                    dom(ib)%vis(i,js-1,k)= dom(ib)%vis(i,js,k)
+                 end do
+              end do
+           else if(dom(ib)%bc_south.eq.61.or.dom(ib)%bc_south.eq.62)then
+	     call log_law(3,dom(ib)%bc_south)
+              do k=ks-1,ke+1
+                 do i=is-1,ie+1
+                    !dom(ib)%vis(i,js,k)= dom(ib)%tauws2(i,k)*dy		!m2/s
                     dom(ib)%vis(i,js-1,k)= dom(ib)%vis(i,js,k)
                  end do
               end do
@@ -415,6 +453,28 @@
                     dom(ib)%vis(i,je+1,k) =  dom(ib)%vis(i,je,k)
                  end do
               end do
+           else if (dom(ib)%bc_north.eq.3) then
+              do k=ks-1,ke+1
+                 do i=is-1,ie+1
+                    dom(ib)%vis(i,je+1,k) =  dom(ib)%vis(i,je,k)
+                 end do
+              end do
+           else if (dom(ib)%bc_north.ge.63) then
+	     call wall_function(4,dom(ib)%bc_north)
+              do k=ks-1,ke+1
+                 do i=is-1,ie+1
+                   ! dom(ib)%vis(i,je,k)= dom(ib)%tauwn2(i,k)*dy		!m2/s
+                    dom(ib)%vis(i,je+1,k) =  dom(ib)%vis(i,je,k)
+                 end do
+              end do
+           else if(dom(ib)%bc_north.eq.61.or.dom(ib)%bc_north.eq.62)then
+	     call log_law(4,dom(ib)%bc_north)
+              do k=ks-1,ke+1
+                 do i=is-1,ie+1
+                  !  dom(ib)%vis(i,je,k)= dom(ib)%tauwn2(i,k)*dy		!m2/s
+                    dom(ib)%vis(i,je+1,k) =  dom(ib)%vis(i,je,k)
+                 end do
+              end do
            else
               do k=ks-1,ke+1
                  do i=is-1,ie+1
@@ -440,6 +500,29 @@
                     dom(ib)%vis(i,j,ks-1)= dom(ib)%vis(i,j,ks)
                  end do
               end do
+           else if (dom(ib)%bc_bottom.eq.3) then
+              do j=js-1,je+1
+                 do i=is-1,ie+1
+                    dom(ib)%vis(i,j,ks-1)= dom(ib)%vis(i,j,ks)
+                 end do
+              end do
+           else if (dom(ib)%bc_bottom.ge.63) then
+	     call wall_function(5,dom(ib)%bc_bottom)
+              do j=js-1,je+1
+                 do i=is-1,ie+1
+                   ! dom(ib)%vis(i,j,ks)= dom(ib)%tauwb2(i,j)*dz
+                    dom(ib)%vis(i,j,ks-1)= dom(ib)%vis(i,j,ks)
+                 end do
+              end do
+           else if(dom(ib)%bc_bottom.eq.61.or.
+     &					dom(ib)%bc_bottom.eq.62)then
+	     call log_law(5,dom(ib)%bc_bottom)
+              do j=js-1,je+1
+                 do i=is-1,ie+1
+                  !  dom(ib)%vis(i,j,ks)= dom(ib)%tauwb2(i,j)*dz
+                    dom(ib)%vis(i,j,ks-1)= dom(ib)%vis(i,j,ks)
+                 end do
+              end do
            else
               do j=js-1,je+1
                  do i=is-1,ie+1
@@ -462,6 +545,29 @@
               do j=js-1,je+1
                  do i=is-1,ie+1
                     dom(ib)%vis(i,j,ke)   = rrey
+                    dom(ib)%vis(i,j,ke+1)   = dom(ib)%vis(i,j,ke)
+                 end do
+              end do
+           else if (dom(ib)%bc_top.eq.3) then
+              do j=js-1,je+1
+                 do i=is-1,ie+1
+                    dom(ib)%vis(i,j,ke+1)   = dom(ib)%vis(i,j,ke)
+                 end do
+              end do
+           else if (dom(ib)%bc_top.ge.63) then
+	     call wall_function(6,dom(ib)%bc_top)
+              do j=js-1,je+1
+                 do i=is-1,ie+1
+                   ! dom(ib)%vis(i,j,ke)= dom(ib)%tauwt2(i,j)*dz
+                    dom(ib)%vis(i,j,ke+1)   = dom(ib)%vis(i,j,ke)
+                 end do
+              end do
+           else if(dom(ib)%bc_top.eq.61.or.
+     &					dom(ib)%bc_top.eq.62)then
+	     call log_law(6,dom(ib)%bc_top)
+              do j=js-1,je+1
+                 do i=is-1,ie+1
+                   ! dom(ib)%vis(i,j,ke)   = dom(ib)%tauwt2(i,j)*dz
                     dom(ib)%vis(i,j,ke+1)   = dom(ib)%vis(i,j,ke)
                  end do
               end do

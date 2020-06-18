@@ -24,7 +24,7 @@
 
            call mgkcyc
 
-           buffer_ppref=0.0
+           buffer_ppref=0.d0
 !           do ib=1,nbp
 !              if(dom_id(ib).eq.prefdom) then
 !                 buffer_ppref=dom(ib)%p(ipref,jpref,kpref)+
@@ -61,28 +61,18 @@
         if (myrank.eq.0) write(numfile,*),'not converged!! ',maxcy,rmax
  3000   continue
 
-        if(rmax.gt.100.0) then
-           if(myrank.eq.0) write(numfile,*),'BIG RMAX!! STOP!!!!!',rmax
-           write(6,*),'BIG RMAX!! STOP!!!!!!!!',rmax
-
-           !call tecgrid(itime)
-           !call tecplot_p(itime)
-           !call tecplot_u(itime)
-           !call tecplot_v(itime)
-           !call tecplot_w(itime)
-           !call tecbin(itime)
+        if(rmax.gt.10.0) then
            if(myrank.eq.0) then
-              open (unit=101, file='final_ctime.dat')
-              write (101,'(i8,3F15.6)') 
-     &   ntime,ctime,forcn,qstpn
-              close(101)
+		 write(numfile,*),'BIG RMAX!! STOP!!!!!',rmax
+             open (unit=101, file='final_ctime.dat')
+               write (101,'(i8,3F15.6)') ntime,ctime,forcn,qstpn
+             close(101)
            end if
            call MPI_BARRIER (MPI_COMM_WORLD,ierr)
            call MPI_BARRIER (MPI_COMM_WORLD,ierr)
            stop
         end if
 
-!        call plotres
         call boundu
         call boundv
         call boundw

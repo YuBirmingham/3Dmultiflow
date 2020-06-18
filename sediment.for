@@ -246,12 +246,12 @@
         conv=(duSdx+dvSdy+dwSdz)
 
 !-------Diffusion
-                 awS=-dom(ib)%vis(i,j,k)/(dxx*Pr)
-                 aeS=-dom(ib)%vis(i,j,k)/(dxx*Pr)
-                 anS=-dom(ib)%vis(i,j,k)/(dyy*Pr)
-                 asS=-dom(ib)%vis(i,j,k)/(dyy*Pr)
-                 atS=-dom(ib)%vis(i,j,k)/(dzz*Pr)
-                 ab_S=-dom(ib)%vis(i,j,k)/(dzz*Pr)
+                 awS=-dom(ib)%vis(i,j,k)/(dxx*Sc_t)
+                 aeS=-dom(ib)%vis(i,j,k)/(dxx*Sc_t)
+                 anS=-dom(ib)%vis(i,j,k)/(dyy*Sc_t)
+                 asS=-dom(ib)%vis(i,j,k)/(dyy*Sc_t)
+                 atS=-dom(ib)%vis(i,j,k)/(dzz*Sc_t)
+                 ab_S=-dom(ib)%vis(i,j,k)/(dzz*Sc_t)
 
                  apS = -1.0*(awS+aeS+asS+anS+ab_S+atS)
 
@@ -280,14 +280,10 @@
               do i=dom(ib)%isp,dom(ib)%iep
                  do j=dom(ib)%jsp,dom(ib)%jep
 	if (dom(ib)%S(i,j,k) .gt. 100) then
-!	call tecplot_S(itime)
 	write(6,*)'ERROR: scalar too big'
 	stop
 	end if
-	end do
-	end do
-	end do
-	end do
+	end do;end do;end do;end do
 
         call exchange(8)
 

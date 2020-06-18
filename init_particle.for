@@ -30,7 +30,6 @@ C#############################################################
 	 read(10,*) DF
 	 read(10,*) random
 	 div = 10./(0.5*Dw)
-	 if (random) read(10,*)xp,yp,zp,uop,vop,wop
 
 	 np=ptnr
 
@@ -68,7 +67,6 @@ C#############################################################
 		dp_old(l)=dp_pt(l)
 		Fu(l)=0 ; Fv(l)=0 ; Fw(l)=0
        end do
-	 close (20)
        do ib=1,nbp
       	tti=dom(ib)%ttc_i
             ttj=dom(ib)%ttc_j
@@ -88,6 +86,8 @@ C#############################################################
 	  	write(202,*) 'First release:',np,'new particles. Total:',np
 
 		if (random) then
+
+         	read(10,*)xp,yp,zp,uop,vop,wop
 
 !       	read(10,*) xp_pt(1),yp_pt(1),zp_pt(1),
 !     &		uop_pt(1),vop_pt(1),wop_pt(1)
@@ -196,7 +196,7 @@ C#############################################################
       end if										!restart
 
 	endif											!myrank
-	close (10)
+
       RETURN
       END SUBROUTINE
 
@@ -215,15 +215,12 @@ C **********************************************************************
 	integer is,ie,js,je,ks,ke
       character(LEN=18) filename
       character(LEN=3) b_str,c_str
-	double precision u_cn,v_cn,w_cn,p_cn,T_cn!,S_cn,k_cn,eps_cn,vis_cn
+	double precision u_cn,v_cn,w_cn,p_cn,S_cn,k_cn,eps_cn,vis_cn
    		
 !        if (LRESTART) KK1=KK+KK2
 !        if (LRESTART.eq..false.) KK1=KK
 
 	do ib=1,nbp
-
-	if (dom_id(ib).eq.12.or.dom_id(ib).eq.37.or.dom_id(ib).eq.62
-     &	.or.dom_id(ib).eq.87.or.dom_id(ib).eq.112) then
 
 	  idfile=600+dom_id(ib)
 
@@ -239,8 +236,8 @@ C **********************************************************************
       OPEN (UNIT=idfile, FILE=filename)
 
       WRITE (idfile,*) 'TITLE = ', '"Eulerian field"'
-      WRITE (idfile,"(A)")'VARIABLES = "X","Y","Z","U","V","W","P","T"'!,"S",
-!     &"k","eps","vis"'
+      WRITE (idfile,"(A)")'VARIABLES = "X","Y","Z","U","V","W","P","S",
+     &"k","eps","vis"'
 
 
         is=pl+1; ie=dom(ib)%ttc_i-pl
@@ -275,41 +272,35 @@ C **********************************************************************
      &dom(ib)%p(i+1,j+1,k)  +dom(ib)%p(i,j,k+1)+
      &dom(ib)%p(i+1,j,k+1)  +dom(ib)%p(i,j+1,k+1)+
      &dom(ib)%p(i+1,j+1,k+1))
-!                 S_cn  =0.125*(dom(ib)%S(i,j,k)+
-!     &dom(ib)%S(i+1,j,k)    +dom(ib)%S(i,j+1,k)+
-!     &dom(ib)%S(i+1,j+1,k)  +dom(ib)%S(i,j,k+1)+
-!     &dom(ib)%S(i+1,j,k+1)  +dom(ib)%S(i,j+1,k+1)+
-!     &dom(ib)%S(i+1,j+1,k+1))
-!                 k_cn  =0.125*(dom(ib)%ksgs(i,j,k)+
-!     &dom(ib)%ksgs(i+1,j,k)    +dom(ib)%ksgs(i,j+1,k)+
-!     &dom(ib)%ksgs(i+1,j+1,k)  +dom(ib)%ksgs(i,j,k+1)+
-!     &dom(ib)%ksgs(i+1,j,k+1)  +dom(ib)%ksgs(i,j+1,k+1)+
-!     &dom(ib)%ksgs(i+1,j+1,k+1))
-!                 eps_cn  =0.125*(dom(ib)%eps(i,j,k)+
-!     &dom(ib)%eps(i+1,j,k)    +dom(ib)%eps(i,j+1,k)+
-!     &dom(ib)%eps(i+1,j+1,k)  +dom(ib)%eps(i,j,k+1)+
-!     &dom(ib)%eps(i+1,j,k+1)  +dom(ib)%eps(i,j+1,k+1)+
-!     &dom(ib)%eps(i+1,j+1,k+1))
-!                 vis_cn  =0.125*(dom(ib)%vis(i,j,k)+
-!     &dom(ib)%vis(i+1,j,k)    +dom(ib)%vis(i,j+1,k)+
-!     &dom(ib)%vis(i+1,j+1,k)  +dom(ib)%vis(i,j,k+1)+
-!     &dom(ib)%vis(i+1,j,k+1)  +dom(ib)%vis(i,j+1,k+1)+
-!     &dom(ib)%vis(i+1,j+1,k+1))
-                 T_cn  =0.125*(dom(ib)%T(i,j,k)+
-     &dom(ib)%T(i+1,j,k)    +dom(ib)%T(i,j+1,k)+
-     &dom(ib)%T(i+1,j+1,k)  +dom(ib)%T(i,j,k+1)+
-     &dom(ib)%T(i+1,j,k+1)  +dom(ib)%T(i,j+1,k+1)+
-     &dom(ib)%T(i+1,j+1,k+1))
+                 S_cn  =0.125*(dom(ib)%S(i,j,k)+
+     &dom(ib)%S(i+1,j,k)    +dom(ib)%S(i,j+1,k)+
+     &dom(ib)%S(i+1,j+1,k)  +dom(ib)%S(i,j,k+1)+
+     &dom(ib)%S(i+1,j,k+1)  +dom(ib)%S(i,j+1,k+1)+
+     &dom(ib)%S(i+1,j+1,k+1))
+                 k_cn  =0.125*(dom(ib)%ksgs(i,j,k)+
+     &dom(ib)%ksgs(i+1,j,k)    +dom(ib)%ksgs(i,j+1,k)+
+     &dom(ib)%ksgs(i+1,j+1,k)  +dom(ib)%ksgs(i,j,k+1)+
+     &dom(ib)%ksgs(i+1,j,k+1)  +dom(ib)%ksgs(i,j+1,k+1)+
+     &dom(ib)%ksgs(i+1,j+1,k+1))
+                 eps_cn  =0.125*(dom(ib)%eps(i,j,k)+
+     &dom(ib)%eps(i+1,j,k)    +dom(ib)%eps(i,j+1,k)+
+     &dom(ib)%eps(i+1,j+1,k)  +dom(ib)%eps(i,j,k+1)+
+     &dom(ib)%eps(i+1,j,k+1)  +dom(ib)%eps(i,j+1,k+1)+
+     &dom(ib)%eps(i+1,j+1,k+1))
+                 vis_cn  =0.125*(dom(ib)%vis(i,j,k)+
+     &dom(ib)%vis(i+1,j,k)    +dom(ib)%vis(i,j+1,k)+
+     &dom(ib)%vis(i+1,j+1,k)  +dom(ib)%vis(i,j,k+1)+
+     &dom(ib)%vis(i+1,j,k+1)  +dom(ib)%vis(i,j+1,k+1)+
+     &dom(ib)%vis(i+1,j+1,k+1))
 
       write (idfile,'(11e14.6)') dom(ib)%x(i),dom(ib)%y(j),dom(ib)%z(k)
-     & ,u_cn,v_cn,w_cn,p_cn,T_cn!S_cn,k_cn,eps_cn,vis_cn
+     & ,u_cn,v_cn,w_cn,p_cn,S_cn,k_cn,eps_cn,vis_cn
 
 		enddo
 		enddo
 		enddo
 !		write (90,*) dom(ib)%isp,dom(ib)%iep,
 !     & dom(ib)%jsp,dom(ib)%jep,dom(ib)%ksp,dom(ib)%kep
-	endif
 	end do
 
 
@@ -349,7 +340,7 @@ C
       WRITE (95,"(A)")'VARIABLES = "X","Y","Z","U<sub>Lag<\sub>","V<sub>
      &Lag<\sub>","W<sub>Lag<\sub>","D<sub>Lag<\sub>","F<sub>u","F<sub>v"
      &,"F<sub>w"'
-      WRITE(95,*)'zone ','STRANDID=', 2, 'SOLUTIONTIME=', ctime
+      WRITE (95,*) 'ZONE T= "', 'id:',ntime,'np:',np,'"'	
 
         do l=1,np
       	WRITE (95,*) xp_pt(l),yp_pt(l),zp_pt(l)

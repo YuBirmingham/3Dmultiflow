@@ -75,7 +75,7 @@
      & dom(ib)%su(i,j,k)+forcn*dt
 
                  if (LENERGY) dom(ib)%su(i,j,k)=
-     & dom(ib)%su(i,j,k)+dt*gx*(1.d0-0.5*beta*
+     & dom(ib)%su(i,j,k)+dt*grx*(1.d0-0.5*beta*
      & (dom(ib)%T(i+1,j,k)+dom(ib)%T(i,j,k)) )
 
                  dom(ib)%ustar(i,j,k)=0.0
@@ -140,7 +140,7 @@
                  end if
 
                  if (LENERGY) dom(ib)%su(i,j,k)=
-     & dom(ib)%su(i,j,k)+dt*gy*(1.d0-0.5*beta*
+     & dom(ib)%su(i,j,k)+dt*gry*(1.d0-0.5*beta*
      & (dom(ib)%T(i,j+1,k)+dom(ib)%T(i,j,k)) )
 
                  dom(ib)%vstar(i,j,k)=0.0
@@ -205,7 +205,7 @@
                  end if
 
                  if (LENERGY) dom(ib)%su(i,j,k)=
-     & dom(ib)%su(i,j,k)+dt*gz*(1.d0-0.5*beta*
+     & dom(ib)%su(i,j,k)+dt*grz*(1.d0-0.5*beta*
      & (dom(ib)%T(i,j,k+1)+dom(ib)%T(i,j,k)) )
 
                  dom(ib)%wstar(i,j,k)=0.0

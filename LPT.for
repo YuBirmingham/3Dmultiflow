@@ -27,7 +27,7 @@
       real REp,rho_p,rx,ry,rz
       double precision a,b,c,wx,wy,wz,Cd,ao,bo,co
 	double precision dwdy,dvdz,dudz,dwdx,dvdx,dudy
-	double precision dh,delta,gamma_p
+	double precision dh,delta
 	double precision Vcell,Vp!,Vball
 !      double precision, allocatable, dimension(:):: Fpu,Fpv,Fpw
       double precision, allocatable, dimension(:):: up_pt,vp_pt,wp_pt
@@ -43,7 +43,7 @@
 	allocate (up_pt(np_loc),vp_pt(np_loc),wp_pt(np_loc))
       allocate (Fpu(np_loc),Fpv(np_loc),Fpw(np_loc))
 
-	rho_p = 1.4d0
+	rho_p = 1.25d0
 	dens = 1000.d0
 
 	if (np_loc.le.100) nt = 1
@@ -84,7 +84,7 @@
 !$OMP&	iballs_u,iballe_u,jballs_u,jballe_u,kballs_u,kballe_u,
 !$OMP&	iballs_v,iballe_v,jballs_v,jballe_v,kballs_v,kballe_v,
 !$OMP&	iballs_w,iballe_w,jballs_w,jballe_w,kballs_w,kballe_w,
-!$OMP&	REp,rx,ry,rz,Vp,delta,gamma_p,
+!$OMP&	REp,rx,ry,rz,Vp,delta,
 !$OMP&	a,b,c,ao,bo,co,Cd,wx,wy,wz,
 !$OMP&	dwdy,dvdz,dudz,dvdx,dudy,dwdx)
 
@@ -133,16 +133,6 @@
 !	enddo ; enddo ; enddo
 
 !100	continue
-
-	if (LENERGY) then
-		dom(ib)%dens(ip(l),jp(l),kp(l)) = 
-     &999.8/(1.+0.000088*(dom(ib)%T(ip(l),jp(l),kp(l))+20.))
-		dom(ib)%mu(ip(l),jp(l),kp(l)) = 
-     &2.414d-5*10.d0**(-25.2/(dom(ib)%T(ip(l),jp(l),kp(l))+20.-413.d0))
-
-	Re=dom(ib)%dens(ip(l),jp(l),kp(l))/dom(ib)%mu(ip(l),jp(l),kp(l))
-	endif
-
 
 !locate the u,v and w nodes
 
@@ -422,35 +412,6 @@
      &-(3.0d0/(2.0d0*dp_loc(l)))*Cd*sqrt(a**2.d0+b**2.d0+c**2.d0)*c		
      &-2.0d0*0.53d0*(a*wy-b*wx))
 
-	if (LENERGY) then									!variable density form
-	gamma_p=rho_p/dom(ib)%dens(ip(l),jp(l),kp(l))
-
-      up_pt(l) = uop_loc(l) + dt * 
-     &	(((1.+0.5)/(gamma_p+0.5))*((ui_pt(l)-uoi_pt(l))/dt)	
-     &  	-(3.0d0/(4.0d0*dp_loc(l)*(gamma_p+0.5)))
-     &	*Cd*sqrt(a**2.d0+b**2.d0+c**2.d0)*a	
-     &  	-(1./(gamma_p+0.5))*0.53d0*(b*wz-c*wy))								
-
-
-      vp_pt(l) = vop_loc(l) + dt* 
-     &	(((1.+0.5)/(gamma_p+0.5))*((vi_pt(l)-voi_pt(l))/dt)
-     &  	-(3.0d0/(4.0d0*dp_loc(l)*(gamma_p+0.5)))
-     &	*Cd*sqrt(a**2.d0+b**2.d0+c**2.d0)*b
-     &  	-(1./(gamma_p+0.5))*0.53d0*(c*wx-a*wz))
-
-
-      wp_pt(l) = wop_loc(l) + dt* 
-     &	(((1.-gamma_p)/(gamma_p+0.5))*2.*9.81d0+				!Buoyancy
-     &	((1.+0.5)/(gamma_p+0.5))*((wi_pt(l)-woi_pt(l))/dt)		!Fluid stress
-     &	-(3.0d0/(4.0d0*dp_loc(l)*(gamma_p+0.5)))				!Added Mass and drag
-     &	*Cd*sqrt(a**2.d0+b**2.d0+c**2.d0)*c					!Added Mass and drag	
-     &	-(1./(gamma_p+0.5))*0.53d0*(a*wy-b*wx))				!Lift
-
-!      wp_pt(l) = wop_loc(l) + dt* (4.0d0*9.81d0+3.0d0*
-!     &	((wi_pt(l)-woi_pt(l))/dt)	
-!     &-(3.0d0/(2.0d0*dp_loc(l)))*Cd*sqrt(a**2.d0+b**2.d0+c**2.d0)*c		
-!     &-2.0d0*0.53d0*(a*wy-b*wx))
-	endif
 
 !     	write(myrank+700,*)'up',up_pt(l),vp_pt(l),wp_pt(l)
 
@@ -460,21 +421,21 @@
 	c = wp_pt(l)-wi_pt(l)
 
 	!Fluid stresses
-!	Fsu(l) = dom(ib)%dens(ip(l),jp(l),kp(l))*3.14d0*dp_loc(l)**3.d0*((ui_pt(l)-uoi_pt(l))/dt)/6.0d0
-!	Fsv(l) = dom(ib)%dens(ip(l),jp(l),kp(l))*3.14d0*dp_loc(l)**3.d0*((vi_pt(l)-voi_pt(l))/dt)/6.0d0
-!	Fsw(l) = dom(ib)%dens(ip(l),jp(l),kp(l))*3.14d0*dp_loc(l)**3.d0*((wi_pt(l)-woi_pt(l))/dt)/6.0d0
+!	Fsu(l) = dens*3.14d0*dp_loc(l)**3.d0*((ui_pt(l)-uoi_pt(l))/dt)/6.0d0
+!	Fsv(l) = dens*3.14d0*dp_loc(l)**3.d0*((vi_pt(l)-voi_pt(l))/dt)/6.0d0
+!	Fsw(l) = dens*3.14d0*dp_loc(l)**3.d0*((wi_pt(l)-woi_pt(l))/dt)/6.0d0
 
 	!Added mass
-!	Fau(l) = -dom(ib)%dens(ip(l),jp(l),kp(l))*3.14d0*(dp_loc(l)**3.d0)*(a-ao)/(12.0d0*dt)
-!	Fav(l) = -dom(ib)%dens(ip(l),jp(l),kp(l))*3.14d0*(dp_loc(l)**3.d0)*(b-bo)/(12.0d0*dt)
-!	Faw(l) = -dom(ib)%dens(ip(l),jp(l),kp(l))*3.14d0*(dp_loc(l)**3.d0)*(c-co)/(12.0d0*dt)
+!	Fau(l) = -dens*3.14d0*(dp_loc(l)**3.d0)*(a-ao)/(12.0d0*dt)
+!	Fav(l) = -dens*3.14d0*(dp_loc(l)**3.d0)*(b-bo)/(12.0d0*dt)
+!	Faw(l) = -dens*3.14d0*(dp_loc(l)**3.d0)*(c-co)/(12.0d0*dt)
 
 	!Drag
-!	Fdu(l) = -dom(ib)%dens(ip(l),jp(l),kp(l))*3.14d0*(dp_loc(l)**2.d0)*Cd*(sqrt(a**2.d0+b**2.d0
+!	Fdu(l) = -dens*3.14d0*(dp_loc(l)**2.d0)*Cd*(sqrt(a**2.d0+b**2.d0
 !     &	+c**2.d0))*a/8.0d0
-!	Fdv(l) = -dom(ib)%dens(ip(l),jp(l),kp(l))*3.14d0*(dp_loc(l)**2.d0)*Cd*(sqrt(a**2.d0+b**2.d0
+!	Fdv(l) = -dens*3.14d0*(dp_loc(l)**2.d0)*Cd*(sqrt(a**2.d0+b**2.d0
 !     &	+c**2.d0))*b/8.0d0
-!	Fdw(l) = -dom(ib)%dens(ip(l),jp(l),kp(l))*3.14d0*(dp_loc(l)**2.d0)*Cd*(sqrt(a**2.d0+b**2.d0
+!	Fdw(l) = -dens*3.14d0*(dp_loc(l)**2.d0)*Cd*(sqrt(a**2.d0+b**2.d0
 !     &	+c**2.d0))*c/8.0d0
 
 	
@@ -505,28 +466,6 @@
       Fpw(l) = -(3.0d0*((wi_pt(l)-woi_pt(l))/dt)	
      &-(3.0d0/(2.0d0*dp_loc(l)))*Cd*sqrt(a**2.d0+b**2.d0+c**2.d0)*c  			
      &-2.0d0*0.53d0*(a*wy-b*wx))
-
-	if (LENERGY) then
-      Fpu(l) = -(((1.+0.5)/(gamma_p+0.5))*((ui_pt(l)-uoi_pt(l))/dt)	
-     &  	-(3.0d0/(4.0d0*dp_loc(l)*(gamma_p+0.5)))
-     &	*Cd*sqrt(a**2.d0+b**2.d0+c**2.d0)*a	
-     &  	-(1./(gamma_p+0.5))*0.53d0*(b*wz-c*wy))			
-
-      Fpv(l) = -(((1.+0.5)/(gamma_p+0.5))*((vi_pt(l)-voi_pt(l))/dt)
-     &  	-(3.0d0/(4.0d0*dp_loc(l)*(gamma_p+0.5)))
-     &	*Cd*sqrt(a**2.d0+b**2.d0+c**2.d0)*b
-     &  	-(1./(gamma_p+0.5))*0.53d0*(c*wx-a*wz))
-
-      Fpw(l) = -(((1.-gamma_p)/(gamma_p+0.5))*9.81d0+				!Buoyancy
-     &	((1.+0.5)/(gamma_p+0.5))*((wi_pt(l)-woi_pt(l))/dt)		!Fluid stress
-     &	-(3.0d0/(4.0d0*dp_loc(l)*(gamma_p+0.5)))				!Added Mass and drag
-     &	*Cd*sqrt(a**2.d0+b**2.d0+c**2.d0)*c					!Added Mass and drag	
-     &	-(1./(gamma_p+0.5))*0.53d0*(a*wy-b*wx))				!Lift
-
-!      Fpw(l) = -(2.0d0*9.81d0+3.0d0*((wi_pt(l)-woi_pt(l))/dt)	
-!     &-(3.0d0/(2.0d0*dp_loc(l)))*Cd*sqrt(a**2.d0+b**2.d0+c**2.d0)*c  			
-!     &-2.0d0*0.53d0*(a*wy-b*wx))
-	endif
 
 	else
 

@@ -261,12 +261,6 @@
         nge=nemax*(pl+1)**2
         ngc=(pl+1)**3
         ngg=nmax
-!        if(ngg.gt.8180) then
-!           print*,'exceed communication limit (MPI_SEND), STOP!'
-!           if (myrank.eq.0)
-!     & write(numfile,*),'exceed communication limit (MPI_SEND), STOP!'
-!           stop
-!        end if
 
 88      format (a,i5,a,i4,a,i4,a,i4)
 

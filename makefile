@@ -1,7 +1,7 @@
 #############################################################
 F90=mpif90
-OPTIONS    = -c -real-size 64 -O2 -qopenmp
-LOPTIONS   = -O2 -qopenmp
+OPTIONS    = -c -real-size 64 -O3 -openmp 
+LOPTIONS   = -O2 -openmp 
 ##############################################################
 
 objects = \
@@ -10,7 +10,9 @@ module_multidata.o\
 module_mpi.o\
 module_vars_pt.o\
 module_SEM.o\
-imb.o\
+module_ibm.o\
+ibm.o\
+actuator.o\
 shapes.o\
 fdstag.o\
 initial.o\
@@ -31,7 +33,7 @@ wall_function.o\
 log_law.o\
 alloc_pt.o\
 MPI_pt.o\
-delta_func.o\
+DeltaF_MLS.o\
 LPT.o\
 timesig.o\
 weno.o\
@@ -74,12 +76,12 @@ clean:
 alloc_dom.o : alloc_dom.for module_mpi.o module_vars.o module_multidata.o 
 alloc_pt.o : alloc_pt.for module_vars_pt.o module_multidata.o module_mpi.o module_vars.o 
 averaging.o : averaging.for module_vars.o module_multidata.o 
-bounds.o : bounds.for imb.o module_mpi.o module_multidata.o module_vars.o 
+bounds.o : bounds.for ibm.o module_mpi.o module_multidata.o module_vars.o 
 bounds_keps.o : bounds_keps.for module_multidata.o module_vars.o 
 bounds_lsm.o : bounds_lsm.for module_multidata.o lsm.o module_vars.o 
 checkdt.o : checkdt.for module_multidata.o module_mpi.o module_vars.o 
 convection.o : convection.for module_multidata.o module_vars.o 
-delta_func.o : delta_func.for 
+DeltaF_MLS.o : DeltaF_MLS.for module_multidata.o module_vars.o module_mpi.o
 diffusion.o : diffusion.for module_multidata.o module_mpi.o module_vars.o 
 eddyvis_1eqn.o : eddyvis_1eqn.for module_multidata.o module_vars.o 
 eddyvis_smag.o : eddyvis_smag.for module_multidata.o module_vars.o 
@@ -98,7 +100,8 @@ exchangev.o : exchangev.for module_vars.o module_mpi.o module_multidata.o
 exchangew.o : exchangew.for module_vars.o module_mpi.o module_multidata.o 
 fdstag.o : fdstag.for module_vars.o module_mpi.o 
 flosol.o : flosol.for module_vars_pt.o module_multidata.o module_mpi.o module_vars.o 
-imb.o : imb.for module_mpi.o module_multidata.o module_vars.o 
+ibm.o : ibm.for module_ibm.o module_mpi.o module_multidata.o module_vars.o
+actuator.o : ibm.for module_ibm.o module_mpi.o module_multidata.o module_vars.o  
 initial.o : initial.for module_mpi.o module_multidata.o module_vars.o 
 init_particle.o : init_particle.for module_vars_pt.o module_vars.o module_mpi.o module_multidata.o 
 localparameters.o : localparameters.for module_multidata.o module_mpi.o module_vars.o 
@@ -110,13 +113,15 @@ module_mpi.o : module_mpi.for
 module_multidata.o : module_multidata.for 
 module_vars.o : module_vars.for 
 module_vars_pt.o : module_vars_pt.for 
+module_SEM.o     : module_SEM.for
+module_ibm.o : module_ibm.for 
 MPI_pt.o : MPI_pt.for module_vars_pt.o module_multidata.o module_mpi.o module_vars.o 
 newsolv_mg.o : newsolv_mg.for module_multidata.o module_mpi.o module_vars.o 
 post.o : post.for module_vars.o module_multidata.o 
 press.o : press.for module_multidata.o module_mpi.o module_vars.o 
 roughness_function.o : roughness_function.for module_multidata.o module_mpi.o module_vars.o 
 rungek.o : rungek.for module_multidata.o module_mpi.o module_vars.o 
-shapes.o : shapes.for module_mpi.o imb.o module_multidata.o module_vars.o 
+shapes.o : shapes.for module_mpi.o ibm.o module_multidata.o module_vars.o 
 sipsol.o : sipsol.for module_mpi.o module_multidata.o module_vars.o 
 timesig.o : timesig.for module_mpi.o module_vars.o module_multidata.o 
 wall_function.o : wall_function.for module_multidata.o module_vars.o 

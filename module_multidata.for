@@ -36,6 +36,7 @@
            double precision    :: xsl,ysl,zsl,xel,yel,zel,dx,dy,dz
 	     double precision,pointer,dimension(:) :: tauw
            double precision, pointer, dimension(:,:,:) :: S,So,Sm,Stm
+           double precision, pointer, dimension(:,:,:) :: SUtm,SVtm,SWtm
 	     double precision, pointer, dimension(:,:,:) :: sfactor
            double precision, pointer, dimension(:) :: x,y,z,xc,yc,zc
            double precision, pointer, dimension(:,:,:) :: u,v,w,p,pp
@@ -46,7 +47,8 @@
            double precision, pointer, dimension(:,:,:) :: ae,aw,as,an
            double precision, pointer, dimension(:,:,:) :: at,ab
            double precision, pointer, dimension(:,:,:) :: um,vm,wm
-           double precision, pointer, dimension(:,:,:) :: pm,ppm,vis
+           double precision, pointer, dimension(:,:,:) :: pm,ppm
+           double precision, pointer, dimension(:,:,:) :: vis,vism
            double precision, pointer, dimension(:,:,:) :: uum,vvm,wwm
            double precision, pointer, dimension(:,:,:) :: uvm,uwm,vwm
            double precision, pointer, dimension(:,:,:) :: ustar,vstar
@@ -88,14 +90,6 @@
            double precision, pointer, dimension(:,:,:) ::d1,dphi_dxplus
            double precision, pointer, dimension(:,:,:) ::dphi_dyplus,
      &dphi_dzplus,dphi_dxminus,dphi_dyminus,dphi_dzminus
-
-	     double precision, pointer, dimension (:,:) :: u_unst,v_unst
-	     double precision, pointer, dimension (:,:) :: w_unst
-	     double precision, pointer, dimension (:,:) :: um_unst,vm_unst
-	     double precision, pointer, dimension (:,:) :: wm_unst
-	     double precision, pointer, dimension (:,:) :: p_unst,pm_unst
-	     double precision, pointer, dimension (:,:) :: ksgs_unst
-	     double precision, pointer, dimension (:,:) :: eps_unst
 !============================== LSM VARIABLES =============================
            double precision, pointer, dimension(:,:,:) :: phi_init,
      &phi_new,phi_reinit,phi,dphi_dx,dphi_dy,dphi_dz,s_phi0,h_phi,

@@ -1,10 +1,10 @@
 !######################################################################
       module lsm
 !######################################################################
-	  SAVE
-      real,allocatable,dimension(:,:):: f,g,hj_phi,hj_phi1
-      real :: dt_reinit
-      
+	SAVE
+      DOUBLE PRECISION,allocatable,dimension(:,:):: f,g,hj_phi,hj_phi1
+      DOUBLE PRECISION :: dt_reinit,initial_vol,total_vol
+     
       end module lsm
 !######################################################################
       subroutine initial_lsm_3d_channel
@@ -13,26 +13,28 @@
       use lsm
       use multidata
 	use mpi
-
       implicit none
-      integer :: i,j,k,ib,tti,ttj,ttk,sn,sn1
-      integer :: is,ie,js,je,ks,ke
-      real :: b,dummy
-      character*8 :: chb,chb1
+      integer :: i,j,k,ib,tti,ttj,ttk,sn,is,ie,js,je,ks,ke
+      DOUBLE PRECISION :: b,dummy
+      character*8  :: chb
       character*31 :: gridfile
-      character *80 dummyline
+      character*80 :: dummyline
 
 	if (myrank.eq.0) then
 	  write(*,'(a)') '**********************************************'
-	  write(*,'(a)') '*'
 	  write(*,'(a)') '*            TWO-PHASE SIMULATION'
-	  if (l_lsmbase) then
+	  if (L_LSMbase) then
 	    write(*,'(a,f8.3)') '* Base case with rigid lid at z=',length
 	  else
 	    write(*,'(a,f8.3)') '* Initial water level: z=',length
 	  endif
-	  write(*,'(a)') '*'
 	  write(*,'(a)') '**********************************************'
+	endif
+
+
+ 	if (myrank.eq.0) then
+          open (unit=1703, file='LSM_phi_mass.dat' )	
+	    write(1703,*)'Variables = time , Volume ,  Dvolume'
 	endif
 
       do ib=1,nbp  
@@ -41,52 +43,45 @@
         js=dom(ib)%jsp; je=dom(ib)%jep
         ks=dom(ib)%ksp; ke=dom(ib)%kep
 
-        allocate (dom(ib)%phi(tti,ttj,ttk),
-     &dom(ib)%phi_init(tti,ttj,ttk),dom(ib)%phi_reinit(tti,ttj,ttk),
+        allocate (dom(ib)%phi_init(tti,ttj,ttk),
+     &dom(ib)%phi_reinit(tti,ttj,ttk),
      &dom(ib)%phi_new(tti,ttj,ttk),dom(ib)%dphi_dx(tti,ttj,ttk),
      &dom(ib)%dphi_dy(tti,ttj,ttk),dom(ib)%dphi_dz(tti,ttj,ttk),
-     &dom(ib)%s_phi0(tti,ttj,ttk),dom(ib)%h_phi(tti,ttj,ttk),
-     &dom(ib)%phim(tti,ttj,ttk))
+     &dom(ib)%s_phi0(tti,ttj,ttk),dom(ib)%h_phi(tti,ttj,ttk))
+! Note: phi and phim are allocated in initial.for
 !
 ! Read in phi field if restarting from previous solution 
 !
-        if (L_LSM .and. lrestart) then    
-          write(chb,'(i8)') dom_id(ib)
-          write(chb1,'(i8)') itime_start
+        if (L_LSM .and. lrestart .or. L_LSMbase .and. lrestart) then    
+          write(chb,'(i4)') dom_id(ib)
           sn=len(trim(adjustl(chb)))
-          sn1=len(trim(adjustl(chb1)))
           chb=repeat('0',(4-sn))//trim(adjustl(chb))
-          chb1=repeat('0',(6-sn1))//trim(adjustl(chb1))            
-          gridfile='tecout_phi_'//trim(adjustl(chb))//'_'//
-     & 'initial'//'.dat'
+          gridfile='tecout_phi_'//trim(adjustl(chb))//'.dat' 
           open (unit=703, file=gridfile)
-          read (703,*) dummyline
-          read (703,*) dummyline
           read (703,*) dummyline
           read (703,*) dummyline
           read (703,*) dummyline
           do k=ks-1,ke 
             do j=js-1,je 
               do i=is-1,ie 
-                read (703,73) dummy,dummy,dummy,
-     & dom(ib)%phi(i,j,k),dom(ib)%phim(i,j,k),
-     & dom(ib)%dens(i,j,k),dom(ib)%mu(i,j,k)
+                read (703,73) dummy,dummy,dummy,dom(ib)%phi(i,j,k)
+     & ,dom(ib)%phim(i,j,k),dom(ib)%dens(i,j,k),dom(ib)%mu(i,j,k)
               end do
             end do
           end do
- 73       format (10e25.8)
+ 73       format (10e20.8)
           close(703)
-          dom(ib)%phi_init = 0.0
-          dom(ib)%phi_new = 0.0
-          dom(ib)%phi_reinit = 0.0
+          dom(ib)%phi_init = 0.D0
+          dom(ib)%phi_new = 0.D0
+          dom(ib)%phi_reinit = 0.D0
         else
 !
 ! Initialise uniform phi field, if not restarting
 !
-          dom(ib)%phi=1.0
-          dom(ib)%phi_init = 0.0
-          dom(ib)%phi_new = 0.0
-          dom(ib)%phi_reinit = 0.0
+          dom(ib)%phi=1.d0
+          dom(ib)%phi_init = 0.d0
+          dom(ib)%phi_new = 0.d0
+          dom(ib)%phi_reinit = 0.d0
       
           if (trim(keyword).eq.'channel') then      ! Channel flow case
             do k=1,ttk                
@@ -120,11 +115,11 @@
 ! Initialise phi (free surface defined by phi=0, phi=-ve above, +ve below)
 !
                   if (dom(ib)%zc(k).lt.length)   then
-                    dom(ib)%phi(i,j,k) = 1.0*abs(dom(ib)%zc(k)-length)
+                   dom(ib)%phi(i,j,k) = 1.d0*dabs(dom(ib)%zc(k)-length)
                   else if (dom(ib)%zc(k).gt.length)   then
-                    dom(ib)%phi(i,j,k) = -1.0*abs(dom(ib)%zc(k)-length)
+                   dom(ib)%phi(i,j,k) = -1.d0*dabs(dom(ib)%zc(k)-length)
                   else if (dom(ib)%zc(k).eq.length)  then
-                    dom(ib)%phi(i,j,k) = 0.0
+                   dom(ib)%phi(i,j,k) = 0.d0
                   end if
                   dom(ib)%s_phi0(i,j,k)=dom(ib)%phi(i,j,k)
                   dom(ib)%phi_reinit(i,j,k)=dom(ib)%phi(i,j,k)
@@ -168,23 +163,8 @@
 
       return
       end subroutine initial_lsm_3d_channel
-
 !######################################################################
-      subroutine lsm_3d
-!######################################################################
-      use vars
-      use lsm
-      use multidata
-
-      implicit none
-      integer :: i,j,k,ib
-
-      call tvd_rk_3step
-
-      return
-      end subroutine lsm_3d
-!######################################################################
-      subroutine  tvd_rk_3step
+      subroutine  lsm_3d
 !######################################################################
 !**********************************************************************
 ! 3 step runge kutta routine to return convected phi field
@@ -193,14 +173,14 @@
       use lsm
       use multidata
       use mpi
-
       implicit none
       integer :: i,j,k,ib
-      real :: uijk,vijk,wijk,h1,h2,h3
+      DOUBLE PRECISION :: uijk,vijk,wijk,h1,h2,h3
 !
 ! First RK step (phi --> phi_new)
 !
-      call dphi_a_v_3d(14)    
+	
+      call dphi_a_v_3d(14)    !Calculate gradients of phi 
 
       do ib=1,nbp  
 
@@ -374,7 +354,7 @@
 !
            if (trim(keyword).eq.'channel' .and. lends) then
              if (dom(ib)%iprev.lt.0) then
-               if ((i.ge.dom(ib)%isu).and.(i.le.dom(ib)%isu+5)) then                    
+               if ((i.ge.dom(ib)%isu).and.(i.le.dom(ib)%isu+5)) then   ! Distance phi fixed                 
                  if (dom(ib)%zc(k).lt.length)   then
                    dom(ib)%phi(i,j,k) = 1.0*abs(dom(ib)%zc(k)-length)
                  else if (dom(ib)%zc(k).gt.length)   then
@@ -384,7 +364,6 @@
                  end if
                end if
              end if
-!          length=0.0354 
              if  (dom(ib)%inext.lt.0) then
                if ((i.le.dom(ib)%ieu).and.(i.ge.dom(ib)%ieu-5)) then     
                  if (dom(ib)%zc(k).lt.length)   then
@@ -408,10 +387,8 @@
 !
 ! Reinitialise phi field to a signed distance function
 !
-      if (reinit) then
-        call tvd_rk_reinit     !(phi)
-      end if
-
+      if (reinit .and. mod(itime,1).eq.0) call tvd_rk_reinit     !(phi)
+	
       return
       end 
 !#######################################################################
@@ -422,11 +399,10 @@
       use mpi
       use multidata
       implicit none
-
       integer :: i,j,k,ifi,op,ib
-      real :: uijk,vijk,wijk,phi_minus_ip12j
-      real :: phi_plus_ip12j,phi_minus_ijp12
-      real :: phi_plus_ijp12,superbee
+      DOUBLE PRECISION :: uijk,vijk,wijk,phi_minus_ip12j
+      DOUBLE PRECISION :: phi_plus_ip12j,phi_minus_ijp12
+      DOUBLE PRECISION :: phi_plus_ijp12
 
       call hj_weno_dxplus_3d(op)          
       call hj_weno_dyplus_3d(op)      
@@ -513,12 +489,11 @@
       use lsm
       use multidata
       use mpi
-
       implicit none
       integer :: i,j,k,it,ib
       logical :: bool
-      real :: max_abs,abs_dphi,abs_phidiff,max_phidiff
-      real :: local_max_abs,local_max_phidiff
+      DOUBLE PRECISION :: max_abs,abs_dphi,abs_phidiff,max_phidiff
+      DOUBLE PRECISION :: local_max_abs,local_max_phidiff
 
       bool=.false.
       it=0
@@ -535,17 +510,14 @@
          do i=dom(ib)%isp,dom(ib)%iep 
           do j=dom(ib)%jsp,dom(ib)%jep
         
-        abs_dphi = sqrt(dom(ib)%dphi_dx(i,j,k)**2+
+        abs_dphi = dsqrt(dom(ib)%dphi_dx(i,j,k)**2+
      & dom(ib)%dphi_dy(i,j,k)**2+dom(ib)%dphi_dz(i,j,k)**2)
 
-!	  dom(ib)%abs_dphi_check(i,j,k)=abs_dphi
-
         dom(ib)%s_phi0(i,j,k) = dom(ib)%phi(i,j,k)/
-     &      sqrt(dom(ib)%phi(i,j,k)**2+(abs_dphi**2)*dom(ib)%dx**2)
+     & dsqrt(dom(ib)%phi(i,j,k)**2+(abs_dphi**2)*dom(ib)%dx**2)
 
-        dom(ib)%phi_reinit(i,j,k) =dom(ib)%phi(i,j,k) +
-     &  dt_reinit*(dom(ib)%s_phi0(i,j,k)-
-     &   dom(ib)%s_phi0(i,j,k)*abs_dphi) 
+        dom(ib)%phi_reinit(i,j,k) = dom(ib)%phi(i,j,k) +
+     & dt_reinit*(dom(ib)%s_phi0(i,j,k)-dom(ib)%s_phi0(i,j,k)*abs_dphi) 
 
         end do
        end do
@@ -565,15 +537,15 @@
          do i=dom(ib)%isp,dom(ib)%iep 
           do j=dom(ib)%jsp,dom(ib)%jep
 
-        abs_dphi = sqrt(dom(ib)%dphi_dx(i,j,k)**2+
+        abs_dphi = dsqrt(dom(ib)%dphi_dx(i,j,k)**2+
      & dom(ib)%dphi_dy(i,j,k)**2+dom(ib)%dphi_dz(i,j,k)**2)
 
         dom(ib)%s_phi0(i,j,k) = dom(ib)%phi_reinit(i,j,k)/
-     &sqrt(dom(ib)%phi_reinit(i,j,k)**2+(abs_dphi**2)*dom(ib)%dx**2)
+     & dsqrt(dom(ib)%phi_reinit(i,j,k)**2+(abs_dphi**2)*dom(ib)%dx**2)
 
-        dom(ib)%phi_reinit(i,j,k) = 0.75*dom(ib)%phi(i,j,k)+
-     &0.25*dom(ib)%phi_reinit(i,j,k)+
-     &0.25*dt_reinit*(dom(ib)%s_phi0(i,j,k)-
+        dom(ib)%phi_reinit(i,j,k) = 0.75d0*dom(ib)%phi(i,j,k)+
+     &0.25d0*dom(ib)%phi_reinit(i,j,k)+
+     &0.25d0*dt_reinit*(dom(ib)%s_phi0(i,j,k)-
      &dom(ib)%s_phi0(i,j,k)*abs_dphi)
 
           end do
@@ -594,15 +566,15 @@
          do i=dom(ib)%isp,dom(ib)%iep 
           do j=dom(ib)%jsp,dom(ib)%jep
 
-        abs_dphi = sqrt(dom(ib)%dphi_dx(i,j,k)**2+
+        abs_dphi = dsqrt(dom(ib)%dphi_dx(i,j,k)**2+
      & dom(ib)%dphi_dy(i,j,k)**2+dom(ib)%dphi_dz(i,j,k)**2)
 
         dom(ib)%s_phi0(i,j,k) = dom(ib)%phi_reinit(i,j,k)/
-     &sqrt(dom(ib)%phi_reinit(i,j,k)**2+(abs_dphi**2)*dom(ib)%dx**2)
+     &dsqrt(dom(ib)%phi_reinit(i,j,k)**2+(abs_dphi**2)*dom(ib)%dx**2)
 
-        dom(ib)%phi_reinit(i,j,k) =1.0/3.0*dom(ib)%phi(i,j,k)+
-     & 2.0/3.0*dom(ib)%phi_reinit(i,j,k)+
-     & 2.0/3.0*dt_reinit*(dom(ib)%s_phi0(i,j,k)-
+        dom(ib)%phi_reinit(i,j,k) =1.d0/3.d0*dom(ib)%phi(i,j,k)+
+     & 2.d0/3.d0*dom(ib)%phi_reinit(i,j,k)+
+     & 2.d0/3.d0*dt_reinit*(dom(ib)%s_phi0(i,j,k)-
      & dom(ib)%s_phi0(i,j,k)*abs_dphi)
 
           end do
@@ -627,12 +599,11 @@
         do i=dom(ib)%isp,dom(ib)%iep 
          do j=dom(ib)%jsp,dom(ib)%jep
 
-          abs_dphi = sqrt(dom(ib)%dphi_dx(i,j,k)**2+
+          abs_dphi = dsqrt(dom(ib)%dphi_dx(i,j,k)**2+
      & dom(ib)%dphi_dy(i,j,k)**2+dom(ib)%dphi_dz(i,j,k)**2)
-
-          max_abs  = max(max_abs,abs_dphi)
-          abs_phidiff=abs(dom(ib)%phi(i,j,k)-dom(ib)%phi_reinit(i,j,k))
-          max_phidiff = max(max_phidiff,abs_phidiff)
+          max_abs    = max(max_abs,abs_dphi)
+          abs_phidiff=dabs(dom(ib)%phi(i,j,k)-dom(ib)%phi_reinit(i,j,k))
+          max_phidiff= max(max_phidiff,abs_phidiff)
 
          end do
         end do
@@ -675,9 +646,9 @@
       end do
         
       if (myrank.eq.0) then
-        write(*,*) 'norm v (reinit)', max_abs, 'needed steps', it
-        write(numfile3,'(i8,f18.8,i8,2f18.8)') ntime,max_abs,it,ctime,
-     & dt
+        write(*,'(a,f12.6,e15.6,a,i2)')
+     & 'normPHI(reinit)',max_abs,max_phidiff,'  its:',it
+        write(numfile3,'(i8,f18.8,i8,2f18.8)') ntime,max_abs,it,ctime,dt
       endif
 
       return
@@ -688,13 +659,11 @@
       use vars
       use lsm
       use multidata
-
       implicit none
-
       integer :: i,j,k,ifi,op,ib
-      real :: s_phi012
-      double precision, pointer, dimension(:,:,:)::fi
-      real :: lsv,lssig,xm,xp,ym,yp,zm,zp
+      DOUBLE PRECISION :: s_phi012
+      DOUBLE PRECISION, pointer, dimension(:,:,:)::fi
+      DOUBLE PRECISION :: lsv,lssig,xm,xp,ym,yp,zm,zp
 
           call hj_weno_dxplus_3d(op)          
           call hj_weno_dyplus_3d(op)      
@@ -775,14 +744,11 @@
 !######################################################################
       use vars
       use multidata
-
       implicit none
-
       integer :: i,j,k,l,k_star,np,nq,nr,op,ib
-      double precision, pointer, dimension(:,:,:)::fi
-      real :: q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
-	real :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3
-	real :: e
+      DOUBLE PRECISION, pointer, dimension(:,:,:)::fi
+      DOUBLE PRECISION :: q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
+	DOUBLE PRECISION :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3,e
 
       do ib=1,nbp
 
@@ -889,14 +855,11 @@
 !######################################################################
       use vars
       use multidata
-
       implicit none
-
       integer :: i,j,k,l,k_star,np,nq,nr,op,ib
       double precision, pointer, dimension(:,:,:)::fi
-      real :: q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
-	real :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3
-	real :: e
+      DOUBLE PRECISION :: q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
+	DOUBLE PRECISION :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3,e
 
       do ib=1,nbp
 
@@ -1003,14 +966,11 @@
 !######################################################################
       use vars
       use multidata
-
       implicit none
-
       integer :: i,j,k,l,k_star,np,nq,nr,op,ib
       double precision, pointer, dimension(:,:,:)::fi
-      real :: q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
-	real :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3
-	real :: e
+      DOUBLE PRECISION :: q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
+	DOUBLE PRECISION :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3,e
 
       do ib=1,nbp
 
@@ -1116,14 +1076,11 @@
 !######################################################################
       use vars
       use multidata
-
       implicit none
-
       integer :: i,j,k,l,k_star,np,nq,nr,op,ib
       double precision, pointer, dimension(:,:,:)::fi
-      real :: q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
-	real :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3
-	real :: e
+      DOUBLE PRECISION :: q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
+	DOUBLE PRECISION :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3,e
 
       do ib=1,nbp
 
@@ -1230,13 +1187,11 @@
 !######################################################################
       use vars
       use multidata
-
       implicit none
-
       integer :: i,j,k,l,k_star,np,nq,nr,op,ib
       double precision, pointer, dimension(:,:,:)::fi
-      real :: e,q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
-	real :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3
+      DOUBLE PRECISION :: e,q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
+	DOUBLE PRECISION :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3
 
       do ib=1,nbp
 
@@ -1343,14 +1298,11 @@
 !######################################################################
       use vars
       use multidata
-
       implicit none
-
       integer :: i,j,k,l,k_star,np,nq,nr,op,ib
       double precision, pointer, dimension(:,:,:)::fi
-      real :: q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
-	real :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3
-	real :: e
+      DOUBLE PRECISION :: q1,q2,q3,c_star,v1,v2,v3,v4,v5,v11,v22
+	DOUBLE PRECISION :: v33,v44,v55,s1,s2,s3,a1,a2,a3,w1,w2,w3,e
 
       do ib=1,nbp
 
@@ -1459,15 +1411,16 @@
       use lsm
       use mpi
       use multidata
-
       implicit none
-      integer :: i,j,k,n_epsl,ib,tti,ttj,ttk
-      real :: epsl 
-      real, parameter :: pi = 3.14159265359
-!
+      integer :: i,j,k,ib,tti,ttj,ttk
+      DOUBLE PRECISION :: epsl,n_epsl
+      DOUBLE PRECISION, parameter :: pi = 3.14159265359D0
+	DOUBLE PRECISION :: vol !!
+!	
 ! Define an infinitely differentiable smoothed heaviside function h_phi
 !
-      n_epsl = 2
+      n_epsl = 1.9999999d0		! Transition zone across free surface (2 grid cells width either side)
+	vol=0.d0 ;	total_vol=0.d0!!
 
       do ib=1,nbp  
 
@@ -1477,33 +1430,39 @@
          do i=dom(ib)%isp-pl,dom(ib)%iep+pl 
           do j=dom(ib)%jsp-pl,dom(ib)%jep+pl
 
-          if (dom(ib)%phi(i,j,k).lt.(-1.0*epsl)) 
-     &  dom(ib)%h_phi(i,j,k) = 0.0  ! h_phi=0 above free surface
+          if(dom(ib)%phi(i,j,k).lt.(-1.0*epsl))dom(ib)%h_phi(i,j,k)=0.d0  ! h_phi=0 above free surface
 
-          if (dom(ib)%phi(i,j,k).gt.(epsl)) dom(ib)%h_phi(i,j,k) = 1.0  ! h_phi=1.0 below free surface
+          if(dom(ib)%phi(i,j,k).gt.epsl) dom(ib)%h_phi(i,j,k) = 1.d0  	! h_phi=1.0 below free surface
 
-          if (abs(dom(ib)%phi(i,j,k)).le.epsl) then
-!
-! Transition zone across free surface (2 grid cells width either side)
-!
-          dom(ib)%h_phi(i,j,k)=0.5*(1.0+dom(ib)%phi(i,j,k)/
-     &epsl+1.0/pi*sin(pi*dom(ib)%phi(i,j,k)/epsl))           
+          if(DABS(dom(ib)%phi(i,j,k)).le.epsl) then
 
+          dom(ib)%h_phi(i,j,k)=0.5d0*(1.d0+dom(ib)%phi(i,j,k)/epsl
+     & 				+1.d0/pi*DSIN(pi*dom(ib)%phi(i,j,k)/epsl))    
+
+	    vol=vol+dom(ib)%h_phi(i,j,k)*dom(ib)%dx*dom(ib)%dy*dom(ib)%dz   !volume of liquid
           end if
 
         dom(ib)%dens(i,j,k)=densg+(densl-densg)*dom(ib)%h_phi(i,j,k) !dens = densg above free surface, densl below
-        dom(ib)%mu(i,j,k)=mug+(mul-mug)*dom(ib)%h_phi(i,j,k)  !mu = mug above free surface, mul below
+        dom(ib)%mu(i,j,k)=mug+(mul-mug)*dom(ib)%h_phi(i,j,k) 	   !mu = mug above free surface, mul below
 
           end do
          end do
-
         end do
 
+
       end do
- 
+
+	call MPI_ALLREDUCE(vol,total_vol,1,
+     &          MPI_DOUBLE_PRECISION,MPI_SUM,MPI_COMM_WORLD,ierr )  	!!
+	
+	if(itime.eq.itime_start) initial_vol=total_vol
+
+	if(myrank.eq.0 .and. itime.ne.itime_start)then
+     	 WRITE(1703,'(3f15.7)') ctime,total_vol,total_vol/initial_vol
+	endif
+
       call bound_lsm(18) !(dens) 
       call bound_lsm(19) !(mu) 
 
       return
       end subroutine heaviside
-!#####################################################################

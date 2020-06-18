@@ -170,10 +170,11 @@
                  if (dom_ad(dom_id(ib)) .ne. dom_ad(my_cor)) then
                     tag3=2*10**8+my_cor    *10**4+dom_id(ib)
                     tag4=1*10**8+dom_id(ib)*10**4+my_cor
-			  call MPI_IRECV  (dom(ib)%recvb_p1(1),tsend,MPI_FLT,
+                    call MPI_IRECV  (dom(ib)%recvb_p1(1),tsend,MPI_FLT,
      &dom_ad(my_cor),tag4,MPI_COMM_WORLD,dom(ib)%rq_p1,ierr)
                     call MPI_SEND (dom(ib)%sendb_p1(1),tsend,MPI_FLT,
      &dom_ad(my_cor),tag3,MPI_COMM_WORLD,ierr)
+
                  end if
               end if
            end if
@@ -202,11 +203,11 @@
                  if (dom_ad(dom_id(ib)) .ne. dom_ad(my_cor)) then
                     tag1=3*10**8+my_cor    *10**4+dom_id(ib)
                     tag2=4*10**8+dom_id(ib)*10**4+my_cor
-
                     call MPI_IRECV  (dom(ib)%recvb_m2(1),tsend,MPI_FLT,
      &dom_ad(my_cor),tag2,MPI_COMM_WORLD,dom(ib)%rq_m2,ierr)
                     call MPI_SEND (dom(ib)%sendb_m2(1),tsend,MPI_FLT,
      &dom_ad(my_cor),tag1,MPI_COMM_WORLD,ierr)
+
                  end if
               end if
            end if
@@ -235,11 +236,11 @@
                  if (dom_ad(dom_id(ib)) .ne. dom_ad(my_cor)) then
                     tag3=4*10**8+my_cor    *10**4+dom_id(ib)
                     tag4=3*10**8+dom_id(ib)*10**4+my_cor
-
                     call MPI_IRECV  (dom(ib)%recvb_p2(1),tsend,MPI_FLT,
      &dom_ad(my_cor),tag4,MPI_COMM_WORLD,dom(ib)%rq_p2,ierr)
                     call MPI_SEND (dom(ib)%sendb_p2(1),tsend,MPI_FLT,
      &dom_ad(my_cor),tag3,MPI_COMM_WORLD,ierr)
+
                  end if
               end if
            end if
@@ -268,11 +269,11 @@
                  if (dom_ad(dom_id(ib)) .ne. dom_ad(my_cor)) then
                     tag1=5*10**8+my_cor    *10**4+dom_id(ib)
                     tag2=6*10**8+dom_id(ib)*10**4+my_cor
-
                     call MPI_IRECV  (dom(ib)%recvb_m3(1),tsend,MPI_FLT,
      &dom_ad(my_cor),tag2,MPI_COMM_WORLD,dom(ib)%rq_m3,ierr)
                     call MPI_SEND (dom(ib)%sendb_m3(1),tsend,MPI_FLT,
      &dom_ad(my_cor),tag1,MPI_COMM_WORLD,ierr)
+
                  end if
               end if
            end if
@@ -301,11 +302,11 @@
                  if (dom_ad(dom_id(ib)) .ne. dom_ad(my_cor)) then
                     tag3=6*10**8+my_cor    *10**4+dom_id(ib)
                     tag4=5*10**8+dom_id(ib)*10**4+my_cor
-
                     call MPI_IRECV  (dom(ib)%recvb_p3(1),tsend,MPI_FLT,
      &dom_ad(my_cor),tag4,MPI_COMM_WORLD,dom(ib)%rq_p3,ierr)
                     call MPI_SEND (dom(ib)%sendb_p3(1),tsend,MPI_FLT,
      &dom_ad(my_cor),tag3,MPI_COMM_WORLD,ierr)
+
                  end if
               end if
            end if

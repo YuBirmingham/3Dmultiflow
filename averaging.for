@@ -9,13 +9,12 @@
 !     installed options (for constant grid spacing in aver. directions):
 !
 !     only time averaging
-
         use multidata
         use vars
         implicit none
 !        double precision    :: facp1,facm1,facp2,facm2
         double precision    :: ufuf,vfvf,wfwf,ufvf,ufwf,vfwf
-        double precision    :: ucf,vcf,wcf,pfpf,TfTf
+        double precision    :: ucf,vcf,wcf,pfpf,TfTf,SfSf,SfUf,SfVf,SfWf
         integer :: i,j,k,ib
 
         do ib=1,nbp
@@ -145,7 +144,6 @@
 	            if (dom(ib)%phi(i,j,k).ge.0.0) then
                   dom(ib)%pm(i,j,k)=dom(ib)%facm1(i,j,k)*
      & dom(ib)%pm(i,j,k)+dom(ib)%facp1(i,j,k)*dom(ib)%p(i,j,k)
-!                  dom(ib)%pf(i,j,k)=dom(ib)%p(i,j,k)-dom(ib)%pm(i,j,k)
                   pfpf=(dom(ib)%p(i,j,k)-dom(ib)%pm(i,j,k))*
      & (dom(ib)%p(i,j,k)-dom(ib)%pm(i,j,k))
                   dom(ib)%ppm(i,j,k)=dom(ib)%facm2(i,j,k)*
@@ -156,11 +154,33 @@
      & (dom(ib)%T(i,j,k)-dom(ib)%Tm(i,j,k))
                   dom(ib)%Ttm(i,j,k)=dom(ib)%facm2(i,j,k)*
      & dom(ib)%Ttm(i,j,k)+dom(ib)%facp2(i,j,k)*TfTf
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+	IF(LSCALAR.EQ..TRUE.) THEN
+                  dom(ib)%Sm(i,j,k)=dom(ib)%facm1(i,j,k)*
+     & dom(ib)%Sm(i,j,k)+dom(ib)%facp1(i,j,k)*dom(ib)%S(i,j,k)
+                  SfSf=(dom(ib)%S(i,j,k)-dom(ib)%Sm(i,j,k))*
+     & (dom(ib)%S(i,j,k)-dom(ib)%Sm(i,j,k))
+                  dom(ib)%Stm(i,j,k)=dom(ib)%facm2(i,j,k)*
+     & dom(ib)%Stm(i,j,k)+dom(ib)%facp2(i,j,k)*SfSf
+                  SfUf=(dom(ib)%S(i,j,k)-dom(ib)%Sm(i,j,k))*
+     & (dom(ib)%U(i,j,k)-dom(ib)%Um(i,j,k))
+                  dom(ib)%SUtm(i,j,k)=dom(ib)%facm2(i,j,k)*
+     & dom(ib)%SUtm(i,j,k)+dom(ib)%facp2(i,j,k)*SfUf
+
+                  SfVf=(dom(ib)%S(i,j,k)-dom(ib)%Sm(i,j,k))*
+     & (dom(ib)%V(i,j,k)-dom(ib)%Vm(i,j,k))
+                  dom(ib)%SVtm(i,j,k)=dom(ib)%facm2(i,j,k)*
+     & dom(ib)%SVtm(i,j,k)+dom(ib)%facp2(i,j,k)*SfVf
+
+                  SfWf=(dom(ib)%S(i,j,k)-dom(ib)%Sm(i,j,k))*
+     & (dom(ib)%W(i,j,k)-dom(ib)%Wm(i,j,k))
+                  dom(ib)%SWtm(i,j,k)=dom(ib)%facm2(i,j,k)*
+     & dom(ib)%SWtm(i,j,k)+dom(ib)%facp2(i,j,k)*SfWf
+	ENDIF
 	            end if 
  		    else              
                   dom(ib)%pm(i,j,k)=dom(ib)%facm1(i,j,k)*
      & dom(ib)%pm(i,j,k)+dom(ib)%facp1(i,j,k)*dom(ib)%p(i,j,k)
-!                  dom(ib)%pf(i,j,k)=dom(ib)%p(i,j,k)-dom(ib)%pm(i,j,k)
                   pfpf=(dom(ib)%p(i,j,k)-dom(ib)%pm(i,j,k))*
      & (dom(ib)%p(i,j,k)-dom(ib)%pm(i,j,k))
                   dom(ib)%ppm(i,j,k)=dom(ib)%facm2(i,j,k)*
@@ -172,7 +192,40 @@
                   dom(ib)%Ttm(i,j,k)=dom(ib)%facm2(i,j,k)*
      & dom(ib)%Ttm(i,j,k)+dom(ib)%facp2(i,j,k)*TfTf
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+	IF(LSCALAR.EQ..TRUE.) THEN
+                  dom(ib)%Sm(i,j,k)=dom(ib)%facm1(i,j,k)*
+     & dom(ib)%Sm(i,j,k)+dom(ib)%facp1(i,j,k)*dom(ib)%S(i,j,k)
+                  SfSf=(dom(ib)%S(i,j,k)-dom(ib)%Sm(i,j,k))*
+     & (dom(ib)%S(i,j,k)-dom(ib)%Sm(i,j,k))
+                  dom(ib)%Stm(i,j,k)=dom(ib)%facm2(i,j,k)*
+     & dom(ib)%Stm(i,j,k)+dom(ib)%facp2(i,j,k)*SfSf
+
+                  SfUf=(dom(ib)%S(i,j,k)-dom(ib)%Sm(i,j,k))*
+     & (dom(ib)%U(i,j,k)-dom(ib)%Um(i,j,k))
+                  dom(ib)%SUtm(i,j,k)=dom(ib)%facm2(i,j,k)*
+     & dom(ib)%SUtm(i,j,k)+dom(ib)%facp2(i,j,k)*SfUf
+
+                  SfVf=(dom(ib)%S(i,j,k)-dom(ib)%Sm(i,j,k))*
+     & (dom(ib)%V(i,j,k)-dom(ib)%Vm(i,j,k))
+                  dom(ib)%SVtm(i,j,k)=dom(ib)%facm2(i,j,k)*
+     & dom(ib)%SVtm(i,j,k)+dom(ib)%facp2(i,j,k)*SfVf
+
+                  SfWf=(dom(ib)%S(i,j,k)-dom(ib)%Sm(i,j,k))*
+     & (dom(ib)%W(i,j,k)-dom(ib)%Wm(i,j,k))
+                  dom(ib)%SWtm(i,j,k)=dom(ib)%facm2(i,j,k)*
+     & dom(ib)%SWtm(i,j,k)+dom(ib)%facp2(i,j,k)*SfWf
+	ENDIF
 	          end if
+              end do
+           end do
+        end do
+
+        do k=1,dom(ib)%ttc_k
+           do j=1,dom(ib)%ttc_j
+              do i=1,dom(ib)%ttc_i
+           dom(ib)%vism(i,j,k)=dom(ib)%facm1(i,j,k)*dom(ib)%vism(i,j,k)+
+     &  dom(ib)%facp1(i,j,k)*dom(ib)%vis(i,j,k)						
               end do
            end do
         end do

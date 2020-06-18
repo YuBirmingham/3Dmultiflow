@@ -106,7 +106,6 @@
            		zpold(l)=zp_pt(l)
            		uopold(l)=uop_pt(l)
            		vopold(l)=vop_pt(l)
-     
            		wopold(l)=wop_pt(l)
 			dp_old(l)=dp_pt(l)
 	enddo	
@@ -136,6 +135,16 @@
 
 	CALL RANDOM_SEED
 
+!	open(35,file='LPT.cin')
+
+!       	read(35,*)
+!       	read(35,*)
+!       	read(35,*) ptnr
+!       	read(35,*) Dp,random_dp,sigma
+!       	read(35,*) Dw
+!		read(35,*)
+!		read(35,*) random
+!		div = 10./(0.5*Dw)	
        	np = np + ptnr
 
 	  	write(202,*) ntime,'Releasing',ptnr,'new particles.', 
@@ -246,14 +255,6 @@
          	end do
 	
 		else										!if release isnt random, then Dp is constant
-		open(35,file='LPT.cin')
-       	read(35,*)
-       	read(35,*)
-       	read(35,*) 
-       	read(35,*) 
-       	read(35,*) 
-		read(35,*)
-		read(35,*) 
        		do l=np-ptnr+1,np
       			read(35,*)xp_pt(l),yp_pt(l),zp_pt(l),
      &					uop_pt(l),vop_pt(l),wop_pt(l)
@@ -265,10 +266,9 @@
 				wopold(l)=uop_pt(l)
 				dp_pt(l) = Dp
       		 end do
-          close(35)
-
 		endif	
 
+!         close(35)
 
       return
       end subroutine

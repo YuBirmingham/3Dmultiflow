@@ -591,11 +591,7 @@
         integer :: is,ie,js,je,ks,ke
         double precision :: dxx,dyy,dzz,visc,diff
 
-        fac=1.0
-
-!======================================================
-!       IMMERSED BOUNDARY MODIFICATIONS
-!======================================================
+        fac=1.d0
 
         do ib=1,nbp
         dxx=dom(ib)%dx*dom(ib)%dx
@@ -618,13 +614,6 @@
                  dom(ib)%at(i,j,k)=-visc/dzz
                  dom(ib)%ab(i,j,k)=-visc/dzz
 
-	if (dom(ib)%bc_west.ge.61) 	dom(ib)%aw(is,j,k) = 0.d0
-	if (dom(ib)%bc_east.ge.61) 	dom(ib)%ae(ie,j,k) = 0.d0
-	if (dom(ib)%bc_north.ge.61) 	dom(ib)%an(i,je,k) = 0.d0
-	if (dom(ib)%bc_south.ge.61) 	dom(ib)%as(i,js,k) = 0.d0
-	if (dom(ib)%bc_bottom.ge.61) 	dom(ib)%ab(i,j,ks) = 0.d0
-	if (dom(ib)%bc_top.ge.61) 	dom(ib)%at(i,j,ke) = 0.d0
-
                  dom(ib)%ap(i,j,k) = -1.0*(
      &dom(ib)%aw(i,j,k)+dom(ib)%ae(i,j,k)+
      &dom(ib)%as(i,j,k)+dom(ib)%an(i,j,k)+
@@ -638,25 +627,21 @@
      & dom(ib)%at(i,j,k)*dom(ib)%u(i,j,k+1) +
      & dom(ib)%ab(i,j,k)*dom(ib)%u(i,j,k-1))
 
-                 dom(ib)%ustar(i,j,k)=(dom(ib)%ustar(i,j,k)+
-     & dt*alfapr*diff) 
+          dom(ib)%ustar(i,j,k)=dom(ib)%ustar(i,j,k)+dt*alfapr*diff 
 
         if (L_LSM) then! .or. L_LSMbase) then
-          dom(ib)%ustar(i,j,k)=dom(ib)%ustar(i,j,k)+dt*alfapr*grx*1.0-
-     & dt*alfapr*grz*sin(atan(slope))!*
-!     &                                dom(ib)%blku(i,j,k))
+          dom(ib)%ustar(i,j,k)=dom(ib)%ustar(i,j,k)+
+     & dt*alfapr*(grx-grz*sin(atan(slope)))
         end if
 
         if (pressureforce) then
 	    if (L_LSM) then
 	      if (dom(ib)%phi(i,j,k) .ge. 0.0) then
- 	        dom(ib)%ustar(i,j,k)= dom(ib)%ustar(i,j,k)+
-     & dt*alfapr*forcn
+ 	        dom(ib)%ustar(i,j,k)=dom(ib)%ustar(i,j,k)+dt*alfapr*forcn
 	      endif
 	    else if (L_LSMbase) then
 		if (dom(ib)%zc(k).le.length) then
-		  dom(ib)%ustar(i,j,k)= dom(ib)%ustar(i,j,k)+
-     & dt*alfapr*forcn
+		dom(ib)%ustar(i,j,k)=dom(ib)%ustar(i,j,k)+dt*alfapr*forcn
 		endif
 	    else
  	      dom(ib)%ustar(i,j,k)=dom(ib)%ustar(i,j,k)+dt*alfapr*forcn
@@ -683,13 +668,6 @@
                  dom(ib)%at(i,j,k)=-visc/dzz
                  dom(ib)%ab(i,j,k)=-visc/dzz
 
-	if (dom(ib)%bc_west.ge.61) 	dom(ib)%aw(is,j,k) = 0.d0
-	if (dom(ib)%bc_east.ge.61) 	dom(ib)%ae(ie,j,k) = 0.d0
-	if (dom(ib)%bc_north.ge.61) 	dom(ib)%an(i,je,k) = 0.d0
-	if (dom(ib)%bc_south.ge.61) 	dom(ib)%as(i,js,k) = 0.d0
-	if (dom(ib)%bc_bottom.ge.61) 	dom(ib)%ab(i,j,ks) = 0.d0
-	if (dom(ib)%bc_top.ge.61) 	dom(ib)%at(i,j,ke) = 0.d0
-
                  dom(ib)%ap(i,j,k) = -1.0*(
      &dom(ib)%aw(i,j,k)+dom(ib)%ae(i,j,k)+
      &dom(ib)%as(i,j,k)+dom(ib)%an(i,j,k)+
@@ -703,12 +681,10 @@
      & dom(ib)%at(i,j,k)*dom(ib)%v(i,j,k+1) +
      & dom(ib)%ab(i,j,k)*dom(ib)%v(i,j,k-1))
  
-                 dom(ib)%vstar(i,j,k)=(dom(ib)%vstar(i,j,k)+
-     & dt*alfapr*diff)
+           dom(ib)%vstar(i,j,k)=dom(ib)%vstar(i,j,k)+dt*alfapr*diff
 
         if (L_LSM) then! .or. L_LSMbase) then
-          dom(ib)%vstar(i,j,k)=dom(ib)%vstar(i,j,k)+dt*alfapr*gry!*
-!     &                                dom(ib)%blkv(i,j,k))
+          dom(ib)%vstar(i,j,k)=dom(ib)%vstar(i,j,k)+dt*alfapr*gry
         end if
 
               end do
@@ -731,13 +707,6 @@
                  dom(ib)%at(i,j,k)=-visc/dzz
                  dom(ib)%ab(i,j,k)=-visc/dzz
 
-	if (dom(ib)%bc_west.ge.61) 	dom(ib)%aw(is,j,k) = 0.d0
-	if (dom(ib)%bc_east.ge.61) 	dom(ib)%ae(ie,j,k) = 0.d0
-	if (dom(ib)%bc_north.ge.61) 	dom(ib)%an(i,je,k) = 0.d0
-	if (dom(ib)%bc_south.ge.61) 	dom(ib)%as(i,js,k) = 0.d0
-	if (dom(ib)%bc_bottom.ge.61) 	dom(ib)%ab(i,j,ks) = 0.d0
-	if (dom(ib)%bc_top.ge.61) 	dom(ib)%at(i,j,ke) = 0.d0
-
                  dom(ib)%ap(i,j,k) = -1.0*(
      &dom(ib)%aw(i,j,k)+dom(ib)%ae(i,j,k)+
      &dom(ib)%as(i,j,k)+dom(ib)%an(i,j,k)+
@@ -751,13 +720,11 @@
      & dom(ib)%at(i,j,k)*dom(ib)%w(i,j,k+1) +
      & dom(ib)%ab(i,j,k)*dom(ib)%w(i,j,k-1))
  
-                 dom(ib)%wstar(i,j,k)=(dom(ib)%wstar(i,j,k)+
-     & dt*alfapr*diff) 
+           dom(ib)%wstar(i,j,k)=dom(ib)%wstar(i,j,k)+dt*alfapr*diff
 
         if (L_LSM) then! .or. L_LSMbase) then
       dom(ib)%wstar(i,j,k)=dom(ib)%wstar(i,j,k)+dt*alfapr*grz*
-     & cos(atan(slope)) !*
-!     &                                dom(ib)%blkw(i,j,k))
+     & cos(atan(slope))
         end if
 
               end do

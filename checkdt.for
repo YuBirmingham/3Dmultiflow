@@ -109,6 +109,9 @@
         end do
 
         dtmax = min(dtvisc,dtmax)
+
+	  wtime_cfl=dt/dtmax			!Pablo 07_2017
+
         dtmax = safety_factor * dtmax 
         dt=min(dt*1.1,dtmax)
 
@@ -127,37 +130,15 @@
         end if
 
         buffer_dtmax=dt
-!        call MPI_BARRIER (MPI_COMM_WORLD,ierr)
         call MPI_ALLREDUCE (buffer_dtmax,dt1,1,MPI_FLT,MPI_MIN,
      &                   MPI_COMM_WORLD,ierr )  
 
         dt=dt1
 
-        if(itime.ne.itime_start) then
-           if(dt.lt.dtavg*0.1) then
-              print*,'#*#*#*#*#*# dt becomes smaller, check result!!!!'
-              if (myrank.eq.0)
-     & write(numfile,*) '#*#*#*# dt becomes smaller, check result!!!!'
-              call tecgrid(itime)
-              call tecplot_p(itime)
-              call tecplot_u(itime)
-              call tecplot_v(itime)
-              call tecplot_w(itime)
-              call tecbin(itime)
-              if(myrank.eq.0) then
-                 open (unit=101, file='final_ctime.dat')
-                 write (101,'(i8,3F15.6)') 
-     &   ntime,ctime,forcn,qstpn
-                 close(101)
-              end if
-              call MPI_BARRIER (MPI_COMM_WORLD,ierr)
-              call MPI_BARRIER (MPI_COMM_WORLD,ierr)
-              stop
-           end if
-           dtsum=dtsum+dt
-        else
-           dtsum=dt
-        end if
+	  if (variTS.eq. .true.) dt=dtinit
+
+       dtsum=dtsum+dt
+
         dtavg=dtsum/(itime-itime_start+1)
 
         return

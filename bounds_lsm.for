@@ -36,6 +36,19 @@
         DO j = dom(ib)%jsp-pl, dom(ib)%jep+pl
 	  DO ipl = 1,pl
 	    FI (dom(ib)%iep+ipl,j,k) = FI(dom(ib)%iep+ipl-1,j,k)
+
+!Fix the level set funtion at the outlet of the domain:
+	  if(op.le.17) then ! level set functions
+         if (dom(ib)%bc_east.eq.2 .or.dom(ib)%bc_east.eq.21) then
+                 if (dom(ib)%zc(k).lt.length)   then
+	    FI(dom(ib)%isp-ipl,j,k) = 1.0*abs(dom(ib)%zc(k)-length)
+                 else if (dom(ib)%zc(k).gt.length)   then
+	    FI(dom(ib)%isp-ipl,j,k) = -1.0*abs(dom(ib)%zc(k)-length)
+                 else if (dom(ib)%zc(k).eq.length)  then
+	    FI(dom(ib)%isp-ipl,j,k) = 0.0
+                 end if  
+  	  endif; endif
+
 	  ENDDO
         END DO  
        END DO

@@ -19,8 +19,8 @@
            do i=is,ie
               do j=js,je
                  dom(ib)%ustar(i,j,k)=
-     & dom(ib)%ustar(i,j,k)+dt*alfapr*gx*
-     & (1.d0-beta*0.5*(dom(ib)%T(i+1,j,k)+dom(ib)%T(i,j,k)))
+     & dom(ib)%ustar(i,j,k)+dt*alfapr*grx*
+     & (1.d0-0.5*beta*(dom(ib)%T(i+1,j,k)+dom(ib)%T(i,j,k)))
               end do
            end do
         end do
@@ -33,8 +33,8 @@
            do i=is,ie
               do j=js,je
                  dom(ib)%vstar(i,j,k)=
-     & dom(ib)%vstar(i,j,k)+dt*alfapr*gy*
-     & (1.d0-beta*0.5*(dom(ib)%T(i,j+1,k)+dom(ib)%T(i,j,k)))
+     & dom(ib)%vstar(i,j,k)+dt*alfapr*gry*
+     & (1.d0-0.5*beta*(dom(ib)%T(i,j+1,k)+dom(ib)%T(i,j,k)))
               end do
            end do
         end do
@@ -47,8 +47,8 @@
            do i=is,ie
               do j=js,je
                  dom(ib)%wstar(i,j,k)=
-     & dom(ib)%wstar(i,j,k)+dt*alfapr*gz*
-     & (1.d0-beta*0.5*(dom(ib)%T(i,j,k+1)+dom(ib)%T(i,j,k)))
+     & dom(ib)%wstar(i,j,k)+dt*alfapr*grz*
+     & (1.d0-0.5*beta*(dom(ib)%T(i,j,k+1)+dom(ib)%T(i,j,k)))
 
               end do
            end do

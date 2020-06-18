@@ -1,7 +1,6 @@
 !#############################################################################
 	subroutine SEM
 !#############################################################################
-!THIS PROGRAM IMPLEMENTS THE SEM METHOD DESCRIBED IN N. JARRIN THESIS, CHP. 4
 	USE IFPORT
 	USE module_SEM
 	USE vars
@@ -10,7 +9,7 @@
 	IMPLICIT NONE
 	DOUBLE PRECISION :: VOL,Ly,Lz,ENNE,XMIN,XMAX,YMIN
 	DOUBLE PRECISION :: YMAX,ZMIN,ZMAX,PI,U0,HU,RIZ,RDIVz,UAVE(3)
-	DOUBLE PRECISION :: SIGMA_VALUE,MAXVSEM,MINVSEM
+	DOUBLE PRECISION :: SIGMA_VALUE,NE_SEM,MAXVSEM,MINVSEM
 	INTEGER :: DIVY,DIVZ,IY,IZ,II,N,I,J,M,IT,IGLOBAL
 	INTEGER,allocatable,dimension(:)::lsy,lsz,ley,lez
 !THE BOX DIMENSIONS ARE DIFINED AS [XLENGHT] * [Ly] * [Lz]
@@ -32,24 +31,18 @@
 	  iddom(I)=idom*(J-1)+(jdom*idom*(N-1))
 	 ENDDO ; ENDDO
 !DIVISION ON THE Y AND Z DIRECTIONS 
-	 Do J=1,jdom
-	  ley(J)=ley(J-1)+
-     &   NINT((ycor(iddom(J),2)-ycor(iddom(J),1))/g_dy) +1
-		 IF(J.EQ.1) THEN	
-	        lsy(J)=1
-		 ELSE
-	        lsy(J)=ley(J-1)+1
-		 ENDIF
-	   DIVY = DIVY + NINT((ycor(iddom(J),2)-ycor(iddom(J),1))/g_dy) +1
+        lsy(1)=1
+	  ley(1)=lsy(1)+NINT((ycor(iddom(1),2)-ycor(iddom(1),1))/g_dy)+1
+	 Do J=2,jdom
+	  lsy(J)=ley(J-1)+1
+	  ley(J)=lsy(J)+NINT((ycor(iddom(J),2)-ycor(iddom(J),1))/g_dy)+1
+	  DIVY = DIVY + NINT((ycor(iddom(J),2)-ycor(iddom(J),1))/g_dy) +1
 	 Enddo
+        lsz(1)=1
+	  lez(1)=lsz(1)+NINT((zcor(iddom(1),2)-zcor(iddom(1),1))/g_dz)+1
 	 DO N=1,kdom 
-	  lez(N)=lez(N-1)+
-     &   NINT((zcor(iddom(N),2)-zcor(iddom(N),1))/g_dz)+1
-		 IF(N.EQ.1) THEN	
-	        lsz(N)=1 
-		 ELSE
-	        lsz(N)=lez(N-1)+1 
-		 ENDIF
+	  lsz(N)=lez(N-1)+1 
+	  lez(N)=lsz(N)+NINT((zcor(iddom(N),2)-zcor(iddom(N),1))/g_dz)+1
 	  DIVZ = DIVZ + NINT((zcor(iddom(N),2)-zcor(iddom(N),1))/g_dz) +1
 	 ENDDO
 !THE DIVISIONS FOR EACH OF THE DOMAINS IS DETERMINED:
@@ -58,43 +51,47 @@
 	 I=I+1 	
 	  elemyst(I) = lsy(J)  ;  elemzst(I) = lsz(N)
 	  elemyen(I) = ley(J)  ;  elemzen(I) = lez(N)
-	  ljdom(I) = elemyen(I) -  elemyst(I) + 1
-	  lkdom(I) = elemzen(I) -  elemzst(I) + 1
+	  ljdom(I) = elemyen(I) -  elemyst(I) + 1	
+	  lkdom(I) = elemzen(I) -  elemzst(I) + 1 
 	 enddo ; enddo
 
-	write(6,*)'Divisions :',DIVY,DIVZ	
-	write(6,*)'# BLOCKS  :',jdom,kdom	
-	write(6,*)lsy(1),ley(1),lsy(2),ley(2),ley(2)-lsy(2)+1
-	write(6,*)lsz(1),lez(1),lsz(2),lez(2),lez(2)-lsz(2)+1
+	write(6,*)'Divisions :',DIVY,DIVZ, ' Number of BLOCKS  :',jdom,kdom	
+	write(6,'(10i4)')lsy(:)
+	write(6,'(10i4)')ley(:)-lsy(:)
+	write(6,'(10i4)')lsz(:)
+	write(6,'(10i4)')lez(:)-lsz(:)
+!THE AMPLITUDE OF THE VORTICES--> turbulence integral length scale 
+	allocate (SIGMA(3,DIVY,DIVZ))
 
-!THE AMPLITUDE OF THE VORTICES. This can be changed to have larger structures!!!!!!
-	SIGMA_VALUE=MIN(16.D0*g_dy,Lz/2.D0,Ly/2.D0) !isotropic
+!    ******     -> change numbers accordingly      ******  !
+	SIGMA(1,:,:) = 0.252D0
+	SIGMA(2,:,:) = 0.1485d0
+	SIGMA(3,:,:) = 0.1125d0 
 
 !THE NUMBER OF EDDIES IS THE INLET SURFACE DIVIDED BY THE SURFACE OF EACH TURBULENT SPOT
-	NE_SEM = (Ly*Lz)/SIGMA_VALUE**2	
 ![N](INTEGER) AND [ENNE](DOUBLE PRECISION) REPRESENT THE NUMBER OF EDDIES
+	NE_SEM = Ly/Sigma(2,1,1)*Lz/Sigma(3,1,1)
+
 	N = INT(NE_SEM)	;  ENNE = REAL(N)
 
-	if(myrank.eq.0) write(6,*) 'The number of SEM eddies is :', N
+ 	if(myrank.eq.0) write(6,*)'The number of SEM eddies is :',N
 
 !  [REYNOLDS(6)] IS A VECTOR WITH THE SIX ELEMENTS OF REYNOLDS STRESSES.
 !  |REYNOLDS(1)  REYNOLDS(2)  REYNOLDS(4)|
 !  |REYNOLDS(2)  REYNOLDS(3)  REYNOLDS(5)|
 !  |REYNOLDS(4)  REYNOLDS(5)  REYNOLDS(6)|
-      REYNOLDS=(/(TI_SEM*U0)**2, 0.0D0,(TI_SEM*U0)**2, 0.0D0, 
-     & 0.0D0,(TI_SEM*U0)**2/)   ![M/S]
+	REYNOLDS=(/(TI*U0)**2, 0.0D0,(TI*U0)**2, 0.0D0, 0.0D0,(TI*U0)**2/)  ![M/S]
 
 !ALLOCATION OF THE EDDIES VECTOR.
-![VSEM(DIVX,DIVY,DIVZ,3)] IS THE INSTANTANEOUS VELOCITY VECTOR IN THE POINT WITH
-!X,Y,Z COMPONENTS
+![VSEM(DIVX,DIVY,DIVZ,3)] IS THE INSTANTANEOUS VELOCITY VECTOR IN THE POINT WITH X,Y,Z COMPONENTS
 ![X_EDDY(3,N)] IS THE N-TH EDDY LOCATION X,Y,Z
 ![EPSILO(3,N)] IS THE N-TH EDDY INTENSITY IN X,Y,Z
 ![MOLT(3,N)]   IS THE MATRIX PRODUCT [R(3,3)] * [EPSILO(3,N)]
 ![Ksem(N)]     IS A VECTOR USED TO CHECK WHITCH EDDY IS OUTSIDE THE BOX AFTER THE CONVECTION
 
 	ALLOCATE(Vsem(DIVY,DIVZ,3),Usem(DIVY,DIVZ,3),Ksem(N))
-	ALLOCATE(X_EDDY(3,N),EPSILO(3,N),MOLT(3,N),SIGMA(DIVY,DIVZ))
-	PRINT *, "TOTAL TIME INTERVAL = ", DT * ITMAX_SEM, " [S]"
+	ALLOCATE(X_EDDY(3,N),EPSILO(3,N),MOLT(3,N))
+	PRINT *, "SEM total time interval = ", DT * ITMAX_SEM, " (s)"
 
 	XMIN=1.D8 ; XMAX=1.D-8 ; YMIN=1.D8 ; YMAX=1.D-8
 	ZMIN=1.D8 ; ZMAX=1.D-8
@@ -102,19 +99,12 @@
 !DEFINITION OF EDDY LENGTH SCALE AND INITIAL VELOCITY FIELD
 	DO IY=1,DIVY
 	  DO IZ=1,DIVZ
-	   SIGMA(IY,IZ)=SIGMA_VALUE    !!!  MIN(8.0*g_dy,0.20D0) !isotropic
-!Set the inlet velocity prof.  
-  	Usem(IY,IZ,:)=(/ U0 ,0.D0,0.D0/)			
-!	if(UPROF_SEM.eq.1) Usem(IY,IZ,:)=(/ U0 ,0.D0,0.D0/)      !elli
-!   	if(UPROF_SEM.eq.15) then
-!        RIZ=IZ							!elli
-!	   Usem(IY,IZ,:)=(/ U0-0.04324*exp(-11.1764*RIZ), 0.D0,0.D0/)
-!	endif
+	   Usem(IY,IZ,:)=(/ U0 ,0.D0,0.D0/)
 	   UAVE(:) = UAVE(:) + Usem(IY,IZ,:)
 !CALCULATION OF THE EDDY BOX PARAMETERS
-	XMIN=MIN(0.0D0-SIGMA(IY,IZ),XMIN);XMAX=MAX(0.0D0+SIGMA(IY,IZ),XMAX)
-	YMIN=MIN(0.0D0-SIGMA(IY,IZ),YMIN);YMAX=MAX(Ly   +SIGMA(IY,IZ),YMAX)
-	ZMIN=MIN(0.0D0-SIGMA(IY,IZ),ZMIN);ZMAX=MAX(Lz   +SIGMA(IY,IZ),ZMAX)
+	XMIN=MIN(0.0D0-SIGMA(1,IY,IZ),XMIN);XMAX=MAX(0.0D0+SIGMA(1,IY,IZ),XMAX)
+	YMIN=MIN(0.0D0-SIGMA(2,IY,IZ),YMIN);YMAX=MAX(Ly   +SIGMA(2,IY,IZ),YMAX)
+	ZMIN=MIN(0.0D0-SIGMA(3,IY,IZ),ZMIN);ZMAX=MAX(Lz   +SIGMA(3,IY,IZ),ZMAX)
 	  END DO
 	END DO
 
@@ -134,7 +124,7 @@
 	END DO
 !INITIALIZATION OF THE [R(3,3)] MATRIX WITH THE CHOLENSKY DECOMPOSITION
 !OF THE REYNOLDS STRESS TENSOR
-	R = 0
+	R = 0.d0
 	R(1,1) = DSQRT(REYNOLDS(1))
 	R(2,1) = REYNOLDS(2) / R(1,1)
 	R(2,2) = DSQRT(REYNOLDS(3) - R(2,1)*R(2,1))
@@ -142,10 +132,7 @@
 	R(3,2) = (REYNOLDS(5) - R(2,1)*R(3,1)) / R(2,2)
 	R(3,3) = DSQRT(REYNOLDS(6) - R(3,1)*R(3,1) - R(3,2)*R(3,2))
 !BEGINNING OF TIME ITERATIONS
-	DO IT=1,ITMAX_SEM			!PARALLELIZE THIS LOOP
-	 if(mod(IT,50).EQ.0) 
-     &  WRITE(*,*)"ITERATION ",IT,"IN PROGRESS.TIME: ",(IT-1) * DT,'[S]'
-
+	DO IT=1,ITMAX_SEM			!PARALLELISE THIS LOOP
 !PRINTINGS OF GLOBAL VELOCITY AND OF CONVECTION VELOCITY
 	 Do I=1,jdom*kdom
 		  IGLOBAL=500+I
@@ -154,7 +141,7 @@
 	   OPEN(UNIT=IGLOBAL, FILE=FILEGLOBAL,STATUS="UNKNOWN", ACTION="WRITE")
 	   WRITE (IGLOBAL,*)'Variables=up,vp,wp'
 	   WRITE (IGLOBAL,*)
-     &  'zone ',' i=',ljdom(I),',',' j=',lkdom(I),', k= ',1,' f=point'
+     &  'zone  i=',ljdom(I),', j=',lkdom(I),', k=1 f=point'
 	 Enddo
 
 	  MOLT = MATMUL(R,EPSILO) ! !aij*epsij   MATRIX MULTIPLICATION
@@ -167,15 +154,16 @@
 	   Vsem(IY,IZ,:)=(/ 0.d0, 0.d0,  0.d0 /)
 !------------BEGINNING OF EDDIES ITERATIONS
 		DO II=1,N
-		  TEMP(:) = DABS(X_POINT(:) - X_EDDY(:,II))
-	  IF (TEMP(1).LT.SIGMA(IY,IZ) .AND. TEMP(2).LT.SIGMA(IY,IZ) .AND.
-     &      TEMP(3).LT.SIGMA(IY,IZ)) THEN
-	  Vsem(IY,IZ,:)=Vsem(IY,IZ,:)+MOLT(:,II)
-     &    *(DSQRT(1.5D0)**3.0D0)*DSQRT(VOL)/DSQRT(SIGMA(IY,IZ)**3)
-     &    *(1.0D0- DABS(X_POINT(:) - X_EDDY(:,II))/SIGMA(IY,IZ))
-     &    *(1.0D0- DABS(X_POINT(:) - X_EDDY(:,II))/SIGMA(IY,IZ))
-     &    *(1.0D0- DABS(X_POINT(:) - X_EDDY(:,II))/SIGMA(IY,IZ))
-!f(x)=SQRT(3/2)*(1-ABS(X)) JARRIN ET AL. 2009
+		TEMP(:) = DABS(X_POINT(:) - X_EDDY(:,II))
+	  IF (TEMP(1).LT.SIGMA(1,IY,IZ) .AND. 
+     &      TEMP(2).LT.SIGMA(2,IY,IZ) .AND.
+     &      TEMP(3).LT.SIGMA(3,IY,IZ)) THEN
+	        Vsem(IY,IZ,:)=Vsem(IY,IZ,:)+MOLT(:,II)
+     &        *(DSQRT(1.5D0)**3.0D0)*DSQRT(VOL)
+     &        *(1.0D0-TEMP(1)/SIGMA(1,IY,IZ))
+     &        *(1.0D0-TEMP(2)/SIGMA(2,IY,IZ))
+     &        *(1.0D0-TEMP(3)/SIGMA(3,IY,IZ))
+     &        /DSQRT(SIGMA(1,IY,IZ)*SIGMA(2,IY,IZ)*SIGMA(3,IY,IZ)) 
 		 END IF
 		END DO
 ! Instananeous velocity=mean velocity + SEM fluctuation velocity
@@ -185,14 +173,14 @@
 	    END DO
 	  END DO
 
-!	 write(6,*)	'========='
-	  write(6,'(i6,2f15.6)')IT,MAXVSEM,MINVSEM
+	 IF(MOD(IT,50).eq.0) write(6,'(a,i6,a8,3f13.6)')
+     &   'ITERATION ',IT,' Time(s)',(IT-1)*dt,MAXVSEM,MINVSEM
 !------END OF SPATIAL ITERATIONS
 	      Do I=1,jdom*kdom
 	        IGLOBAL=500+I
 		   Do M=elemzst(I),elemzen(I)
 		    Do J=elemyst(I),elemyen(I)
-                  WRITE(500+I,'(3E15.6)')Vsem(J,M,:)				!turn down precision for large files
+                  WRITE(500+I,'(3E15.6)')Vsem(J,M,:)
 	  	  enddo ;enddo 
 	    	 CLOSE (UNIT=IGLOBAL)
 	  	Enddo
@@ -250,4 +238,4 @@
 	END DO
 !----END OF TIME ITERATIONS
 
-	END SUBROUTINE SEM
+	END SUBROUTINE 

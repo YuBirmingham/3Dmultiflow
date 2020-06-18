@@ -1,5 +1,5 @@
 !##########################################################################
-      subroutine log_law(bound,ib)
+      subroutine log_law(bound,cond)
 !			Bruño Fraga Bugallo
 !			Cardiff 2016
 !			Schumman type boundary conditions
@@ -7,7 +7,7 @@
         use vars
         use multidata
         implicit none
-        integer i,j,k,ib,bound,icont,tkmax
+        integer i,j,k,ib,bound,cond,icont,tkmax
         double precision delta,n_x,n_y,n_z,vnor,vtan
         double precision uc,vc,wc,rrey,small
 	  double precision aaa,bbb,const1,const2,const3,const4
@@ -18,21 +18,12 @@
 	  kappa = 0.41
 	  Ecte  = 9.0
 
-
-        if (L_LSM)  rrey=dom(ib)%mu(i,j,k)/dom(ib)%dens(i,j,k)
-
-	if (LENERGY) then
-		dom(ib)%dens(i,j,k) = 
-     &		999.8/(1.+0.000088*(dom(ib)%T(i,j,k)+20.))
-		dom(ib)%mu(i,j,k) = 
-     &		2.414d-5*10.d0**(-25.2/(dom(ib)%T(i,j,k)+20.-413.d0))
-			rrey=dom(ib)%mu(i,j,k)/dom(ib)%dens(i,j,k)
-	endif
+        do ib=1,nbp
 
 	  SELECT CASE (bound)
 
 	  CASE (1) 
-              delta=dom(ib)%dx
+              delta=0.5*dom(ib)%dx
               n_x=1.0
               n_y=0.0
               n_z=0.0
@@ -44,10 +35,10 @@
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
                     vnor=n_x*uc+n_y*vc+n_z*wc
                     vtan=sqrt(abs(uc*uc+vc*vc+wc*wc-vnor*vnor+small))
-			if (dom(ib)%bc_west.eq.62) then				!rough wall
+			if (cond.eq.62) then				!rough wall
                   	ustar = kappa*vtan / log(30.d0*delta/fric)
                         yplus = delta*ustar/rrey
-			elseif (dom(ib)%bc_west.eq.61) then				!smooth wall
+			elseif (cond.eq.61) then				!smooth wall
 				conv  = 1.
 		            ustar = 1. 
 		            icont = 0
@@ -76,7 +67,7 @@
               end do
 
 	     CASE (2)
-              delta=dom(ib)%dx
+              delta=0.5*dom(ib)%dx
               n_x=-1.0
               n_y=0.0
               n_z=0.0
@@ -88,10 +79,10 @@
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
                     vnor=n_x*uc+n_y*vc+n_z*wc
                     vtan=sqrt(abs(uc*uc+vc*vc+wc*wc-vnor*vnor+small))
-			if (dom(ib)%bc_east.eq.62) then				!rough wall
+			if (cond.eq.62) then				!rough wall
                   	ustar = kappa*vtan / log(30.d0*delta/fric)
                         yplus = delta*ustar/rrey
-			elseif (dom(ib)%bc_east.eq.61) then				!smooth wall
+			elseif (cond.eq.61) then				!smooth wall
 				conv  = 1.
 		            ustar = 1. 
 		            icont = 0
@@ -120,7 +111,7 @@
               end do
 
            CASE(3)
-              delta=dom(ib)%dy
+              delta=0.5*dom(ib)%dy
               n_x=0.0
               n_y=1.0
               n_z=0.0
@@ -133,10 +124,10 @@
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
                     vnor=n_x*uc+n_y*vc+n_z*wc
                     vtan=sqrt(abs(uc*uc+vc*vc+wc*wc-vnor*vnor+small))
-			if (dom(ib)%bc_south.eq.62) then				!rough wall
+			if (cond.eq.62) then				!rough wall
                   	ustar = kappa*vtan / log(30.d0*delta/fric)
                         yplus = delta*ustar/rrey
-			elseif (dom(ib)%bc_south.eq.61) then				!smooth wall
+			elseif (cond.eq.61) then				!smooth wall
 				conv  = 1.
 		            ustar = 1. 
 		            icont = 0
@@ -166,7 +157,7 @@
 
 
            CASE (4)
-              delta=dom(ib)%dy
+              delta=0.5*dom(ib)%dy
               n_x=0.0
               n_y=-1.0
               n_z=0.0
@@ -178,10 +169,10 @@
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
                     vnor=n_x*uc+n_y*vc+n_z*wc
                     vtan=sqrt(abs(uc*uc+vc*vc+wc*wc-vnor*vnor+small))
-			if (dom(ib)%bc_north.eq.62) then				!rough wall
+			if (cond.eq.62) then				!rough wall
                   	ustar = kappa*vtan / log(30.d0*delta/fric)
                         yplus = delta*ustar/rrey
-			elseif (dom(ib)%bc_north.eq.61) then				!smooth wall
+			elseif (cond.eq.61) then				!smooth wall
 				conv  = 1.
 		            ustar = 1. 
 		            icont = 0
@@ -211,7 +202,7 @@
 
            CASE (5)
 
-              delta=dom(ib)%dz
+              delta=0.5*dom(ib)%dz
               n_x=0.0
               n_y=0.0
               n_z=1.0
@@ -224,10 +215,10 @@
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
 			  vnor=n_x*uc+n_y*vc+n_z*wc
                     vtan=sqrt(abs(uc*uc+vc*vc+wc*wc-vnor*vnor+small))
-			if (dom(ib)%bc_bottom.eq.62) then				!rough wall
+			if (cond.eq.62) then				!rough wall
                   	ustar = kappa*vtan / log(30.d0*delta/fric)
                         yplus = delta*ustar/rrey
-			elseif (dom(ib)%bc_bottom.eq.61) then				!smooth wall
+			elseif (cond.eq.61) then				!smooth wall
 				conv  = 1.
 		            ustar = 1. 
 		            icont = 0
@@ -241,8 +232,6 @@
 		               ustar = vtan*kappa/log(Ecte*yplus)
 		               conv  = abs((ustar-ustarold)/ustar)
 		            enddo
-!        		if (dom_id(ib).eq.0.and.j.eq.20)  
-!     &			write(6,*)ustar,yplus,delta,rrey,kappa
 		            if (icont.eq.tkmax) then 
 		               print*,'USTAR DOESNT CONVERGE'
 		               print*,'Tang. vel. = ',vtan 
@@ -254,14 +243,13 @@
 			  else
 		 	  	dom(ib)%tauwb(i,j)=ustar**2.0				!tau_1
 			  	dom(ib)%tauwb2(i,j)=dom(ib)%tauwb(i,j)/vtan
-				!dom(ib)%vis(i,j,k)=dom(ib)%tauwb2(i,j)*delta
 			  endif
                  end do
               end do
 
 
            CASE (6)
-              delta=dom(ib)%dz
+              delta=0.5*dom(ib)%dz
               n_x=0.0
               n_y=0.0
               n_z=-1.0
@@ -273,10 +261,10 @@
                     wc=0.5*(dom(ib)%w(i,j,k)+dom(ib)%w(i,j,k-1))
                     vnor=n_x*uc+n_y*vc+n_z*wc
                     vtan=sqrt(abs(uc*uc+vc*vc+wc*wc-vnor*vnor+small))
-			if (dom(ib)%bc_top.eq.62) then				!rough wall
+			if (cond.eq.62) then				!rough wall
                   	ustar = kappa*vtan / log(30.d0*delta/fric)
                         yplus = delta*ustar/rrey
-			elseif (dom(ib)%bc_top.eq.61) then				!smooth wall
+			elseif (cond.eq.61) then				!smooth wall
 				conv  = 1.
 		            ustar = 1. 
 		            icont = 0
@@ -305,6 +293,7 @@
               end do
 
 	  end select
+        end do
 
         return
         end subroutine log_law
