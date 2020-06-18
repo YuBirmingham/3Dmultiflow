@@ -827,7 +827,7 @@
        IF (dom(ib)%zc(k).gt.(nodez_loc(L)+nxl*dom(ib)%dz) .or.
      &     dom(ib)%zc(k).lt.(nodez_loc(L)-nxl*dom(ib)%dz)) GOTO 212 
 
-	 	IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
+	 	!IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
 
 	 nl=nl+1
         dh1_loc(L,nl)= dh(dom(ib)%dx,dom(ib)%dy,dom(ib)%dz,
@@ -841,7 +841,7 @@
       	KmaxU(L)=nl
         	I_nr_U(L,nl)=I ; J_nr_U(L,nl)=J ; K_nr_U(L,nl)=K
    	            
-		ENDIF
+		!ENDIF
 
 	    IF (dhtotal.ge.0.9999) GOTO 700
 
@@ -859,10 +859,10 @@
 	ELSE
 	 Do nl=1,KmaxU(L)
 	  I=I_nr_U(L,nl) ;  J=J_nr_U(L,nl) ;  K=K_nr_U(L,nl)
-	 	IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
+	 	!IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
           U_Beta1_loc(L)=(U_Beta1_loc(L)+
      &    dom(ib)%USTAR(I,J,K)*dh1_loc(L,nl))     
-		ENDIF
+		!ENDIF
   	 Enddo  	 
 	ENDIF
 700	continue
@@ -883,7 +883,7 @@
             DO K = 1, dom(ib)%ttc_k 
        IF (dom(ib)%zc(k).gt.(nodez_loc(L)+nxl*dom(ib)%dz) .or.
      &     dom(ib)%zc(k).lt.(nodez_loc(L)-nxl*dom(ib)%dz) )  GOTO 222 
-	 	IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
+	 	!IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
 	 nl=nl+1
         dh2_loc(L,nl)= dh(dom(ib)%dx,dom(ib)%dy,dom(ib)%dz,
      &  dom(ib)%XC(I),dom(ib)%Y(J),dom(ib)%ZC(K)
@@ -896,7 +896,7 @@
       	KmaxV(L)=nl
         I_nr_V(L,nl)=I ; J_nr_V(L,nl)=J ; K_nr_V(L,nl)=K
 
-		ENDIF
+		!ENDIF
            
 	    IF (dhtotal.ge.0.9999) GOTO 701
 222         CONTINUE
@@ -910,10 +910,10 @@
 	ELSE
 	 Do nl=1,KmaxV(L)
 	  I=I_nr_V(L,nl) ;  J=J_nr_V(L,nl) ;  K=K_nr_V(L,nl)
-	 	IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
+	 	!IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
           U_Beta2_loc(L)=U_Beta2_loc(L)+
      &                 dom(ib)%VSTAR(I,J,K)*dh2_loc(L,nl)
-		ENDIF
+		!ENDIF
   	 Enddo
 	ENDIF
 701	continue
@@ -933,7 +933,7 @@
             DO K = 1, dom(ib)%ttc_k 
        IF (dom(ib)%z(k) .gt.(nodez_loc(L)+nxl*dom(ib)%dz) .or.
      &     dom(ib)%z(k) .lt.(nodez_loc(L)-nxl*dom(ib)%dz) )  GOTO 232 
-	 	IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
+	 	!IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
 	 nl=nl+1
         dh3_loc(L,nl)= dh(dom(ib)%dx,dom(ib)%dy,dom(ib)%dz,
      &  dom(ib)%XC(I),dom(ib)%YC(J),dom(ib)%Z(K)
@@ -944,7 +944,7 @@
 	  	dhtotal=dhtotal+ dh3_loc(L,nl)
       	KmaxW(L)=nl
         I_nr_W(L,nl)=I ; J_nr_W(L,nl)=J ; K_nr_W(L,nl)=K
-		ENDIF                
+		!ENDIF                
 	    IF (dhtotal.ge.0.9999) GOTO 702
 232         CONTINUE
             END DO
@@ -958,10 +958,10 @@
 	ELSE
 	 Do nl=1,KmaxW(L)
 	  I=I_nr_W(L,nl) ;  J=J_nr_W(L,nl) ;  K=K_nr_W(L,nl)
-	 	IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
+	 	!IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
           U_Beta3_loc(L)=U_Beta3_loc(L)+
      &    dom(ib)%WSTAR(I,J,K)*dh3_loc(L,nl)
-		ENDIF
+		!ENDIF
   	 Enddo
 	ENDIF
 702	continue
@@ -1073,25 +1073,25 @@
 	IF(imb_block_loc(L).ne.dom_id(ib)) GOTO 802
 	 Do nl=1,KmaxU(L)
            I=I_nr_U(L,nl) ;  J=J_nr_U(L,nl) ;  K=K_nr_U(L,nl)
-	 	IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
+	 	!IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
           fbeta = FX1_loc(L)*dh1_loc(L,nl)*reddelta(lag_bod_loc(L))  
           dom(ib)%USTAR(I,J,K) = dom(ib)%USTAR(I,J,K) + dt*alfapr*fbeta
-		endif
+		!endif
 
   	 Enddo	
 	 Do nl=1,KmaxV(L)
 	  I=I_nr_V(L,nl) ;  J=J_nr_V(L,nl);  K=K_nr_V(L,nl)
-	 	IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
+	 	!IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
           fbeta = FX2_loc(L)*dh2_loc(L,nl)*reddelta(lag_bod_loc(L))   
           dom(ib)%VSTAR(I,J,K) = dom(ib)%VSTAR(I,J,K) + dt*alfapr*fbeta
-		endif
+		!endif
   	 Enddo
 	 Do nl=1,KmaxW(L)
 	  I=I_nr_W(L,nl) ;  J=J_nr_W(L,nl);  K=K_nr_W(L,nl)
-	 	IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
+	 	!IF (abs(dom(ib)%USTAR(I,J,K)).gt.1.d-3) then			!Brunho comp channel 2016
           fbeta = FX3_loc(L)*dh3_loc(L,nl)*reddelta(lag_bod_loc(L))      
           dom(ib)%WSTAR(I,J,K) = dom(ib)%WSTAR(I,J,K) + dt*alfapr*fbeta
-		endif
+		!endif
   	 Enddo
 802	CONTINUE
       End do 
