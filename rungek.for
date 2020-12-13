@@ -226,7 +226,7 @@
         do k=ks,ke
            do i=is,ie
               do j=js,je
-                 visc=dom(ib)%vis(i,j,k)
+                 visc=(dom(ib)%vis(i,j,k)+dom(ib)%vis(i+1,j,k))/2.0
  
                  diff=visc*(
      &((-dom(ib)%u(i+2,j,k)+16.0*dom(ib)%u(i+1,j,k)
@@ -257,7 +257,7 @@
         do k=ks,ke
            do i=is,ie
               do j=js,je
-                 visc=dom(ib)%vis(i,j+1,k)
+                 visc=(dom(ib)%vis(i,j,k)+dom(ib)%vis(i,j+1,k))/2.0
 
                  diff=visc*(
      &((-dom(ib)%v(i+2,j,k)+16.0*dom(ib)%v(i+1,j,k)
@@ -284,7 +284,7 @@
         do k=ks,ke
            do i=is,ie
               do j=js,je
-                 visc=dom(ib)%vis(i,j,k+1)
+                 visc=(dom(ib)%vis(i,j,k)+dom(ib)%vis(i,j,k+1))/2.0
 
                  diff=visc*(
      &((-dom(ib)%w(i+2,j,k)+16.0*dom(ib)%w(i+1,j,k)
@@ -609,7 +609,7 @@
         do k=ks,ke
            do i=is,ie
               do j=js,je
-                 visc=dom(ib)%vis(i+1,j,k)
+                 visc=(dom(ib)%vis(i,j,k)+dom(ib)%vis(i+1,j,k))/2.0
  
                  dom(ib)%aw(i,j,k)=-visc/dxx
                  dom(ib)%ae(i,j,k)=-visc/dxx
@@ -674,7 +674,7 @@
         do k=ks,ke
            do i=is,ie
               do j=js,je
-                 visc=dom(ib)%vis(i,j+1,k)
+                 visc=(dom(ib)%vis(i,j,k)+dom(ib)%vis(i,j+1,k))/2.0
 
                  dom(ib)%aw(i,j,k)=-visc/dxx
                  dom(ib)%ae(i,j,k)=-visc/dxx
@@ -722,7 +722,7 @@
         do k=ks,ke
            do i=is,ie
               do j=js,je
-                 visc=dom(ib)%vis(i,j,k+1)
+                 visc=(dom(ib)%vis(i,j,k)+dom(ib)%vis(i,j,k+1))/2.0
 
                  dom(ib)%aw(i,j,k)=-visc/dxx
                  dom(ib)%ae(i,j,k)=-visc/dxx
