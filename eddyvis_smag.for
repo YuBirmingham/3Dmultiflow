@@ -31,7 +31,9 @@
 		elseif(dom(ib)%bc_west.eq.61.or.dom(ib)%bc_west.eq.62)then
 			call log_law(1,ib)
 		  end if
-	  elseif (dom(ib)%inext.lt.0) then
+	end if
+	
+	if (dom(ib)%inext.lt.0) then
 		  if (dom(ib)%bc_east.eq.4) then
 		  	call tauw_noslip(2,ib)						
 		  elseif (dom(ib)%bc_east.ge.63) then
@@ -39,7 +41,9 @@
 		elseif(dom(ib)%bc_east.eq.61.or.dom(ib)%bc_east.eq.62)then
 			call log_law(2,ib)
 		endif
-	  elseif (dom(ib)%jprev.lt.0) then
+	end if
+	
+	if (dom(ib)%jprev.lt.0) then
 		  if (dom(ib)%bc_south.eq.4) then
 		  	call tauw_noslip(3,ib)						
 		  elseif (dom(ib)%bc_south.ge.63) then
@@ -47,7 +51,9 @@
 		elseif(dom(ib)%bc_south.eq.61.or.dom(ib)%bc_south.eq.62)then
 			call log_law(3,ib)
 		endif
-	  elseif (dom(ib)%jnext.lt.0) then
+	end if
+	
+	if (dom(ib)%jnext.lt.0) then
 		  if (dom(ib)%bc_north.eq.4) then
 		  	call tauw_noslip(4,ib)						
 		  elseif (dom(ib)%bc_north.ge.63) then
@@ -55,7 +61,9 @@
 		elseif(dom(ib)%bc_north.eq.61.or.dom(ib)%bc_north.eq.62)then
 			call log_law(4,ib)
 		  end if
-	  elseif (dom(ib)%kprev.lt.0) then
+	end if
+	
+	if (dom(ib)%kprev.lt.0) then
 		  if (dom(ib)%bc_bottom.eq.4) then
 		  	call tauw_noslip(5,ib)						
 		  elseif (dom(ib)%bc_bottom.ge.63) then
@@ -63,7 +71,9 @@
 	    elseif(dom(ib)%bc_bottom.eq.61.or.dom(ib)%bc_bottom.eq.62)then
 			call log_law(5,ib)
 		  end if
-	  elseif (dom(ib)%knext.lt.0) then
+	end if
+	
+	if (dom(ib)%knext.lt.0) then
 		  if (dom(ib)%bc_top.eq.4) then
 		  	call tauw_noslip(6,ib)						
 		  elseif (dom(ib)%bc_top.ge.63) then
@@ -71,7 +81,7 @@
 	    elseif(dom(ib)%bc_top.eq.61.or.dom(ib)%bc_top.eq.62)then
 			call log_law(6,ib)
 		  end if
-	  endif
+	end if
 
         delta_grid=(dom(ib)%dx*dom(ib)%dy*dom(ib)%dz)**(1.0/3.0)
 
